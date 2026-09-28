@@ -25,8 +25,11 @@ export default function AccountStep() {
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
-  const needsPasswordOffer = !profile?.has_password;
+  // Google/Apple sign-ups have no password yet; they must create one here (Instagram-style),
+  // so they can also log in with their email. Email sign-ups already have one.
+  const needsPassword = !profile?.has_password;
   const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
+  const passwordOk = !needsPassword || password.length >= MIN_PASSWORD_LENGTH;
 
   // Live availability check, debounced so we don't query on every keystroke.
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function AccountStep() {
     return () => clearTimeout(timer);
   }, [username, userId, profile?.username]);
 
-  const ready = name.trim().length > 0 && status === 'available' && !passwordTooShort;
+  const ready = name.trim().length > 0 && status === 'available' && passwordOk;
 
   const save = async () => {
     if (!userId) return;
@@ -59,7 +62,7 @@ export default function AccountStep() {
       return;
     }
     try {
-      if (password) await setPassword(userId, password);
+      if (needsPassword) await setPassword(userId, password);
       router.push('/profile');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your password.');
@@ -115,17 +118,25 @@ export default function AccountStep() {
           error={status === 'invalid' || status === 'taken' ? usernameMessage : undefined}
           hint={status === 'checking' ? usernameMessage : undefined}
         />
-        {needsPasswordOffer && (
-          <Input
-            label="Create a password (optional)"
-            value={password}
-            onChangeText={setPw}
-            secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            hint={`So you can also log in with ${profile?.email ?? 'your email'}`}
-            error={passwordTooShort ? `At least ${MIN_PASSWORD_LENGTH} characters` : undefined}
-          />
+        {needsPassword && (
+          <>
+            <Input
+              label="Email"
+              value={profile?.email ?? ''}
+              editable={false}
+              hint="From your Google account"
+            />
+            <Input
+              label="Create a password"
+              value={password}
+              onChangeText={setPw}
+              secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
+              hint={`At least ${MIN_PASSWORD_LENGTH} characters, so you can also log in with your email`}
+              error={passwordTooShort ? `At least ${MIN_PASSWORD_LENGTH} characters` : undefined}
+            />
+          </>
         )}
       </View>
 
