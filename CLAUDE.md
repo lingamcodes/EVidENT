@@ -90,7 +90,28 @@ announcements
 
 notifications
   id, user_id (→users), type, related_event_id, read (boolean), created_at
+
+event_questions            -- RSVP questionnaire (host-defined)
+  id, event_id (→events), position, text,
+  type ('short' | 'mc' | 'check'), image_url, created_at
+
+event_question_options
+  id, question_id (→event_questions), position, label
+
+rsvp_answers               -- one row per answer; checkbox = one row per ticked option
+  id, rsvp_id (→rsvps), question_id (→event_questions),
+  option_id (→event_question_options, null for short text), text_answer, created_at
 ```
+
+## Database
+
+- Schema lives in `supabase/migrations/` as SQL files. Never create or alter
+  tables in the Supabase dashboard — write a new migration instead.
+- Every table has row-level security. The app uses only the anon key
+  (`.env.local`, see `.env.example`); the service_role key never ships.
+- After each migration is applied, regenerate types:
+  `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
+- Supabase client: `src/lib/supabase.ts`.
 
 ## Styling conventions
 
