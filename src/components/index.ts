@@ -1,0 +1,25 @@
+// Shared UI. Screens import from '@/components' and never style primitives themselves.
+export { ActivityRow, Bold } from './ActivityRow';
+export { AddTile } from './AddTile';
+export { AnswerPreview } from './AnswerPreview';
+export { Avatar } from './Avatar';
+export { AvatarStack } from './AvatarStack';
+export { Button } from './Button';
+export { Card } from './Card';
+export { Chip } from './Chip';
+export { ChoiceMarker } from './ChoiceMarker';
+export { Dialog } from './Dialog';
+export { Divider } from './Divider';
+export { EventCard } from './EventCard';
+export { IconButton } from './IconButton';
+export { Input } from './Input';
+export { Screen } from './Screen';
+export { SectionHeader } from './SectionHeader';
+export { SegmentedControl } from './SegmentedControl';
+export { StepProgress } from './StepProgress';
+export { Tabs } from './Tabs';
+export { Tag } from './Tag';
+export { Text } from './Text';
+export { QuestionEditor } from './questionnaire/QuestionEditor';
+export { QuestionnaireSection } from './questionnaire/QuestionnaireSection';
+export * from './questionnaire/types';
