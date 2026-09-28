@@ -53,7 +53,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // TODO: add the generated Database type once the schema is applied:
-//   npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts
+//   npm run db:types
 //   then createClient<Database>(...)
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {

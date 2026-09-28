@@ -124,8 +124,7 @@ One-time CLI setup: `npx supabase login`, then
   tables in the Supabase dashboard — write a new migration instead.
 - Every table has row-level security. The app uses only the anon key
   (`.env.local`, see `.env.example`); the service_role key never ships.
-- After each migration is applied, regenerate types:
-  `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
+- After each migration is applied to dev, regenerate types with `npm run db:types`.
 - Supabase client: `src/lib/supabase.ts`.
 
 ## Styling conventions
