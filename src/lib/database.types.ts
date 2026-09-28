@@ -444,6 +444,7 @@ export type Database = {
     }
     Functions: {
       can_view_event: { Args: { target_event_id: string }; Returns: boolean }
+      check_account: { Args: { lookup_email: string }; Returns: Json }
       is_event_host: { Args: { target_event_id: string }; Returns: boolean }
     }
     Enums: {

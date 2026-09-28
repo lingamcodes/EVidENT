@@ -7,7 +7,7 @@ import { spacing } from '@/theme/tokens';
 
 /** Where Supabase's password-reset email lands. */
 export default function ResetPasswordScreen() {
-  const { finishPasswordRecovery } = useAuth();
+  const { finishPasswordRecovery, refreshProfile, showNotice } = useAuth();
 
   return (
     <Screen>
@@ -15,7 +15,14 @@ export default function ResetPasswordScreen() {
         <Text variant="title">Set a new password</Text>
         <Text variant="body" tone="muted">Pick something you haven't used here before.</Text>
       </View>
-      <NewPasswordForm submitLabel="Save password" onDone={finishPasswordRecovery} />
+      <NewPasswordForm
+        submitLabel="Save password"
+        onDone={async () => {
+          await refreshProfile();
+          finishPasswordRecovery();
+          showNotice('Password updated. You are signed in.');
+        }}
+      />
     </Screen>
   );
 }

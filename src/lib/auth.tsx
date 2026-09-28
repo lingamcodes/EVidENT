@@ -21,6 +21,10 @@ type AuthState = {
   passwordRecovery: boolean;
   refreshProfile: () => Promise<void>;
   finishPasswordRecovery: () => void;
+  /** Short message shown as a toast over whatever screen is open (e.g. after Google sign-in). */
+  notice: string | null;
+  showNotice: (message: string) => void;
+  dismissNotice: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -47,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const dismissNotice = useCallback(() => setNotice(null), []);
   const url = Linking.useLinkingURL();
   const userId = session?.user.id;
 
@@ -82,11 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Email-confirmation and password-reset links open the app with tokens in the URL.
   useEffect(() => {
     if (!url) return;
-    createSessionFromUrl(url)
-      .then((result) => {
-        if (result?.isRecovery) setPasswordRecovery(true);
-      })
-      .catch(() => {});
+    // Mark recovery before signing in, so the app never flashes Home/onboarding first.
+    const isRecovery = QueryParams.getQueryParams(url).params.type === 'recovery';
+    if (isRecovery) setPasswordRecovery(true);
+    createSessionFromUrl(url).catch((e) => {
+      if (isRecovery) setPasswordRecovery(false);
+      // Usually an expired or already-used link.
+      setNotice(
+        `That link didn't work${e instanceof Error && e.message ? ` (${e.message})` : ''}. Request a new one and open it on this phone.`,
+      );
+    });
   }, [url]);
 
   const value: AuthState = {
@@ -96,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     passwordRecovery,
     refreshProfile,
     finishPasswordRecovery: () => setPasswordRecovery(false),
+    notice,
+    showNotice: setNotice,
+    dismissNotice,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -109,8 +123,38 @@ export function useAuth() {
 
 /* ── Actions ──────────────────────────────────────────────────────────── */
 
-/** Opens Google in a browser sheet; resolves once the user is signed in (or cancelled). */
-export async function signInWithGoogle() {
+export type AccountCheck = {
+  exists: boolean;
+  confirmed: boolean;
+  has_password: boolean;
+  has_google: boolean;
+};
+
+/** Does this email already have an account, and how does it sign in? */
+export async function checkAccount(email: string): Promise<AccountCheck> {
+  const { data, error } = await supabase.rpc('check_account', { lookup_email: email.trim() });
+  if (error) throw error;
+  return data as AccountCheck;
+}
+
+/** Re-sends the sign-up confirmation email for an unconfirmed account. */
+export async function resendConfirmation(email: string) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim(),
+    options: { emailRedirectTo: redirectTo() },
+  });
+  if (error) throw error;
+}
+
+/** Accounts older than this when Google returns are treated as existing (not just created). */
+const NEW_ACCOUNT_WINDOW_MS = 60_000;
+
+/**
+ * Opens Google in a browser sheet. Resolves to 'existing' if it signed into an account
+ * that was already there, 'new' if Google just created one, or null if cancelled.
+ */
+export async function signInWithGoogle(): Promise<'existing' | 'new' | null> {
   const returnUrl = redirectTo();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -119,7 +163,12 @@ export async function signInWithGoogle() {
   if (error) throw error;
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, returnUrl);
-  if (result.type === 'success') await createSessionFromUrl(result.url);
+  if (result.type !== 'success') return null;
+
+  const signedIn = await createSessionFromUrl(result.url);
+  const createdAt = signedIn?.session?.user.created_at;
+  if (!createdAt) return null;
+  return Date.now() - new Date(createdAt).getTime() > NEW_ACCOUNT_WINDOW_MS ? 'existing' : 'new';
 }
 
 /** Returns true when Supabase needs the user to confirm their email first. */
@@ -155,3 +204,27 @@ export async function signOut() {
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
+
+/** Google button behaviour shared by the welcome and log-in screens. */
+export function useGoogleSignIn() {
+  const { showNotice } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const start = async () => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const outcome = await signInWithGoogle();
+      if (outcome === 'existing') {
+        showNotice('Welcome back! This Google email already had an Evident account, so you are signed in to it.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Google sign-in failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { start, busy, error };
+}

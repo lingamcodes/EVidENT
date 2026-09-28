@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
+import { Toast } from '@/components';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/lib/auth';
 
@@ -32,7 +33,7 @@ export default function RootLayout() {
 
 /** Picks which part of the app is reachable: signed out, onboarding, or the app itself. */
 function RootNavigator() {
-  const { session, profile, loading, passwordRecovery } = useAuth();
+  const { session, profile, loading, passwordRecovery, notice, dismissNotice } = useAuth();
 
   // Wait for the stored session and profile so the wrong screen never flashes.
   if (loading) return null;
@@ -60,6 +61,7 @@ function RootNavigator() {
           <Stack.Screen name="set-password" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
+      <Toast message={notice} onDismiss={dismissNotice} />
       <AnimatedSplashOverlay />
     </>
   );

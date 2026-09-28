@@ -1,26 +1,13 @@
+import { makeRedirectUri } from 'expo-auth-session';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button, Divider, Screen, Text } from '@/components';
-import { signInWithGoogle } from '@/lib/auth';
+import { useGoogleSignIn } from '@/lib/auth';
 import { spacing } from '@/theme/tokens';
 
 export default function WelcomeScreen() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-
-  const google = async () => {
-    setBusy(true);
-    setError(undefined);
-    try {
-      await signInWithGoogle();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google sign-in failed.');
-    } finally {
-      setBusy(false);
-    }
-  };
+  const google = useGoogleSignIn();
 
   return (
     <Screen>
@@ -32,8 +19,8 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={{ gap: spacing.sm }}>
-        <Button label="Continue with Google" variant="secondary" onPress={google} loading={busy} fullWidth />
-        {error && <Text variant="small" tone="danger">{error}</Text>}
+        <Button label="Continue with Google" variant="secondary" onPress={google.start} loading={google.busy} fullWidth />
+        {google.error && <Text variant="small" tone="danger">{google.error}</Text>}
       </View>
 
       <Divider label="or" />
@@ -44,6 +31,8 @@ export default function WelcomeScreen() {
       </View>
 
       <Text variant="caption" align="center">By continuing you agree to the community rules. Be normal.</Text>
+      {/* TEMP debug: the return address sent to Supabase. Remove once Google sign-in works in Expo Go. */}
+      <Text variant="caption" align="center" selectable>Return address: {makeRedirectUri()}</Text>
     </Screen>
   );
 }

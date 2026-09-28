@@ -21,6 +21,7 @@ export { StepProgress } from './StepProgress';
 export { Tabs } from './Tabs';
 export { Tag } from './Tag';
 export { Text } from './Text';
+export { Toast } from './Toast';
 export { QuestionEditor } from './questionnaire/QuestionEditor';
 export { QuestionnaireSection } from './questionnaire/QuestionnaireSection';
 export * from './questionnaire/types';
