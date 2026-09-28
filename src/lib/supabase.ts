@@ -6,6 +6,8 @@ import * as aesjs from 'aes-js';
 import * as SecureStore from 'expo-secure-store';
 import { AppState } from 'react-native';
 
+import type { Database } from './database.types';
+
 /**
  * Session storage: the session JSON is too large for SecureStore's 2KB limit,
  * so it's AES-encrypted into AsyncStorage and only the key lives in SecureStore.
@@ -52,10 +54,8 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY — copy .env.example to .env.local and fill them in.');
 }
 
-// TODO: add the generated Database type once the schema is applied:
-//   npm run db:types
-//   then createClient<Database>(...)
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+// Types come from `npm run db:types`; rerun it after every migration.
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
     storage: new LargeSecureStore(),
     autoRefreshToken: true,
