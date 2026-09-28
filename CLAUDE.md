@@ -105,6 +105,21 @@ rsvp_answers               -- one row per answer; checkbox = one row per ticked 
 
 ## Database
 
+Two Supabase projects (both free tier):
+- **evident-dev** — used by Expo Go and the CLI. Safe to break or reset.
+- **evident (prod)** — the project connected to the GitHub integration.
+  Only changes merged into `main` reach it; never run CLI commands
+  against prod.
+
+Workflow for a schema change:
+1. Write a new file in `supabase/migrations/`.
+2. `npm run db:push-dev` → test on the phone against dev.
+3. `npm run db:types` → commit the regenerated types with the migration.
+4. PR → merge to `main` → GitHub integration applies it to prod.
+
+One-time CLI setup: `npx supabase login`, then
+`npm run db:link-dev -- <dev-project-ref>`.
+
 - Schema lives in `supabase/migrations/` as SQL files. Never create or alter
   tables in the Supabase dashboard — write a new migration instead.
 - Every table has row-level security. The app uses only the anon key
