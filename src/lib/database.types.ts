@@ -400,26 +400,41 @@ export type Database = {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
+          bio: string | null
+          city: string | null
           created_at: string
           email: string | null
+          has_password: boolean
           id: string
           name: string
+          onboarded_at: string | null
+          username: string | null
         }
         Insert: {
           account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
+          has_password?: boolean
           id: string
           name?: string
+          onboarded_at?: string | null
+          username?: string | null
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
+          has_password?: boolean
           id?: string
           name?: string
+          onboarded_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }

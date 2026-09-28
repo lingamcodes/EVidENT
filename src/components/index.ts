@@ -13,6 +13,7 @@ export { Divider } from './Divider';
 export { EventCard } from './EventCard';
 export { IconButton } from './IconButton';
 export { Input } from './Input';
+export { PersonRow } from './PersonRow';
 export { Screen } from './Screen';
 export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';

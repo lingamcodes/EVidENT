@@ -64,7 +64,9 @@ copy or onboarding with it.
 
 ```
 users
-  id, email, name, avatar_url, account_type ('individual' | 'org'), created_at
+  id, email, name, avatar_url, account_type ('individual' | 'org'), created_at,
+  username (unique, lowercase), bio (≤120), city, has_password, onboarded_at
+  -- avatars in Storage bucket 'avatars' at <user_id>/avatar.jpg (512px JPEG)
 
 follows
   id, target_id (→users), follower_id (→users),
