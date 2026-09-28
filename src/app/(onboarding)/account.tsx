@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button, Input, Screen, SegmentedControl, StepProgress, Text } from '@/components';
-import { MIN_PASSWORD_LENGTH, setPassword, signOut, useAuth } from '@/lib/auth';
+import { signOut, useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { spacing } from '@/theme/tokens';
 
@@ -21,15 +21,9 @@ export default function AccountStep() {
   const [name, setName] = useState(profile?.name ?? '');
   const [username, setUsername] = useState(profile?.username ?? '');
   const [status, setStatus] = useState<UsernameStatus>('idle');
-  const [password, setPw] = useState('');
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
-  // Google/Apple sign-ups have no password yet; they must create one here (Instagram-style),
-  // so they can also log in with their email. Email sign-ups already have one.
-  const needsPassword = !profile?.has_password;
-  const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
-  const passwordOk = !needsPassword || password.length >= MIN_PASSWORD_LENGTH;
 
   // Live availability check, debounced so we don't query on every keystroke.
   useEffect(() => {
@@ -44,7 +38,7 @@ export default function AccountStep() {
     return () => clearTimeout(timer);
   }, [username, userId, profile?.username]);
 
-  const ready = name.trim().length > 0 && status === 'available' && passwordOk;
+  const ready = name.trim().length > 0 && status === 'available';
 
   const save = async () => {
     if (!userId) return;
@@ -55,20 +49,13 @@ export default function AccountStep() {
       .update({ account_type: accountType, name: name.trim(), username })
       .eq('id', userId);
 
+    setSaving(false);
     if (updateError) {
-      setSaving(false);
       if (updateError.code === '23505') setStatus('taken');
       else setError(updateError.message);
       return;
     }
-    try {
-      if (needsPassword) await setPassword(userId, password);
-      router.push('/profile');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your password.');
-    } finally {
-      setSaving(false);
-    }
+    router.push('/profile');
   };
 
   const usernameMessage = {
@@ -118,26 +105,6 @@ export default function AccountStep() {
           error={status === 'invalid' || status === 'taken' ? usernameMessage : undefined}
           hint={status === 'checking' ? usernameMessage : undefined}
         />
-        {needsPassword && (
-          <>
-            <Input
-              label="Email"
-              value={profile?.email ?? ''}
-              editable={false}
-              hint="From your Google account"
-            />
-            <Input
-              label="Create a password"
-              value={password}
-              onChangeText={setPw}
-              secureTextEntry
-              autoComplete="new-password"
-              textContentType="newPassword"
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters, so you can also log in with your email`}
-              error={passwordTooShort ? `At least ${MIN_PASSWORD_LENGTH} characters` : undefined}
-            />
-          </>
-        )}
       </View>
 
       {error && <Text variant="small" tone="danger">{error}</Text>}

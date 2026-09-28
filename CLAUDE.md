@@ -164,3 +164,8 @@ row rather than creating a duplicate. Same identity, multiple auth methods.
 - Screens compose components from src/components/. Screens may only apply layout styles (flex, margin, gap, width). Never colour, typography, border, or radius.
 - Visual variations are component props (variant, size), not style overrides.
 - Before creating a new component, check src/components/ for an existing one to extend.
+- Keyboard must never cover what the user is typing. Every screen is wrapped in
+  `<Screen>`, which scrolls a focused field above the iOS keyboard (Android
+  resizes natively). Text fields use `<Input>`, which hooks into this; any new
+  text-entry component must call `useRevealAboveKeyboard()` on focus the same way.
+  (react-native-keyboard-controller would be nicer but isn't in Expo Go.)
