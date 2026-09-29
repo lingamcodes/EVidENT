@@ -50,7 +50,7 @@ export function NewPasswordForm({ submitLabel, onDone }: Props) {
         error={tooShort ? `At least ${MIN_PASSWORD_LENGTH} characters` : undefined}
       />
       <Input
-        label="Confirm password"
+        label="Reconfirm New Password"
         value={confirm}
         onChangeText={setConfirm}
         secureTextEntry
