@@ -2,6 +2,7 @@
  * DEV ONLY — component gallery for checking the design on-device.
  * Delete this file and its tab in app-tabs.tsx before shipping.
  */
+import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -55,6 +56,7 @@ export default function ComponentGallery() {
 
   return (
     <Screen>
+      <IconButton icon={<Text variant="heading">‹</Text>} onPress={() => router.back()} accessibilityLabel="Back" variant="ghost" />
       <Section title="Typography">
         <Text variant="display">Display</Text>
         <Text variant="title">Title — Hey Mei</Text>

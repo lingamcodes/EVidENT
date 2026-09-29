@@ -2,12 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useRef, type ReactNo
 import { Dimensions, Keyboard, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, layout, spacing } from '@/theme/tokens';
+import { borders, colors, layout, spacing } from '@/theme/tokens';
 
 type Props = {
   children: ReactNode;
   /** Set false for screens that manage their own scrolling (lists, maps). */
   scroll?: boolean;
+  /** Pinned below the scrolling content, e.g. a Publish / Save bar. */
+  footer?: ReactNode;
 };
 
 /** Lets inputs ask the screen to scroll them above the keyboard. */
@@ -18,7 +20,7 @@ export const useRevealAboveKeyboard = () => useContext(KeyboardRevealContext);
 const KEYBOARD_GAP = spacing.xl;
 
 /** Page wrapper: background, safe area, side gutters, and keeps focused fields above the keyboard. */
-export function Screen({ children, scroll = true }: Props) {
+export function Screen({ children, scroll = true, footer }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const offsetY = useRef(0);
   const keyboardHeight = useRef(0);
@@ -80,6 +82,7 @@ export function Screen({ children, scroll = true }: Props) {
       ) : (
         <View style={[styles.content, styles.fill]}>{children}</View>
       )}
+      {footer && <View style={styles.footer}>{footer}</View>}
     </SafeAreaView>
   );
 }
@@ -88,4 +91,14 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: layout.screenGutter, paddingVertical: spacing.lg, gap: spacing.xl },
   fill: { flex: 1 },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    backgroundColor: colors.surface,
+    borderTopWidth: borders.hairline,
+    borderTopColor: colors.border,
+  },
 });

@@ -87,6 +87,7 @@ export const colors = {
   neutralSoft: palette.neutral100,
   neutralMuted: palette.neutral300,
   track: palette.neutral300,
+  toggleOff: palette.neutral400,
 
   success: palette.sage800,
   danger: palette.red700,
@@ -139,6 +140,11 @@ export const sizes = {
   iconSmall: 16,
   thumb: 56,
   textAreaMinHeight: 90,
+  toggle: { width: 38, height: 22, inset: 2 },
+  coverImage: 250,
+  dialogListMax: 238,
+  paxInput: 84,
+  tabBarCreate: 42,
   progressBar: 4,
   badgeDot: 8,
   avatar: { xs: 30, sm: 32, md: 48, lg: 60, xl: 96, xxl: 132 },
@@ -194,6 +200,7 @@ export const typography = {
   caption: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
   meta: { fontFamily: fonts.body, fontSize: 10.5, lineHeight: 14 },
   badge: { fontFamily: fonts.bodyBold, fontSize: 10 },
+  tabLabel: { fontFamily: fonts.bodyBold, fontSize: 9.5 },
   eyebrow: {
     fontFamily: fonts.bodyBold,
     fontSize: 9.5,

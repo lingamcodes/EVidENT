@@ -76,8 +76,18 @@ follows
 events
   id, host_id (→users), title, description, date_time, location,
   cover_image, capacity, visibility ('public' | 'followers' | 'private'),
-  paynow_amount, paynow_reference, external_chat_link, created_at
+  paynow_amount, paynow_reference, external_chat_link, created_at,
+  ends_at, rsvp_by, map_link, status ('draft' | 'published'),
+  allow_guest_invites, invite_code (unique), updated_at
   -- MVP uses 'public' and 'private' only; 'followers' reserved for v2
+  -- description = "Additional notes"; capacity null = unlimited
+  -- saved via RPC save_event(p_event, p_questions) in one transaction
+  -- cover photos: Storage bucket 'event-covers' at <user_id>/<ts>.jpg (1600px JPEG)
+
+event_invites              -- who can see/join a private event
+  id, event_id (→events), invitee_id (→users), invited_by (→users), created_at
+  -- invite links: join_event_by_code(code); public preview: get_invite_preview(code)
+  --   (title, host, when, where, cover — never guests or media)
 
 rsvps
   id, event_id (→events), user_id (→users),

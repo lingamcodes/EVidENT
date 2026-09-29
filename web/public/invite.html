@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>You're invited · Evident</title>
+  <meta name="description" content="You've been invited to an event on Evident.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Same palette and type as the app (src/theme/tokens.ts). */
+    :root {
+      --bg: #f5ead8; --surface: #ebddc5; --text: #201e1d; --muted: #645c50; --subtle: #82796a;
+      --accent: #c67139; --accent-pressed: #8c491a; --border: rgba(32, 30, 29, 0.16);
+      --heading: "Caprasimo", system-ui, sans-serif; --body: "Figtree", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--body); }
+    main { max-width: 440px; margin: 0 auto; padding: 28px 22px 48px; display: flex; flex-direction: column; gap: 18px; }
+    .brand { font: 400 22px var(--heading); color: var(--accent); }
+    .eyebrow { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--subtle); }
+    .cover { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 28px; display: block; background: var(--surface); }
+    h1 { margin: 0; font: 400 34px/1.05 var(--heading); }
+    .host { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+    .host img, .host .initial { width: 30px; height: 30px; border-radius: 999px; object-fit: cover; }
+    .host .initial { display: grid; place-items: center; background: #ffc6a5; color: #643312; font: 400 14px var(--heading); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 28px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .card .value { font-weight: 700; font-size: 15px; margin-top: 3px; }
+    .btn { display: block; width: 100%; padding: 15px; border-radius: 999px; text-align: center; font: 700 15px var(--body); text-decoration: none; border: 1px solid transparent; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:active { background: var(--accent-pressed); }
+    .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+    .note { font-size: 13px; line-height: 1.5; color: var(--muted); text-align: center; margin: 0; }
+    .code { font: 700 18px ui-monospace, monospace; letter-spacing: .12em; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">Evident</div>
+
+    <p id="loading" class="note">Loading your invite…</p>
+
+    <section id="invalid" hidden class="card">
+      <h1 style="font-size:24px">This invite isn't valid</h1>
+      <p class="note" style="text-align:left">The event may have been deleted, or the link was copied wrong. Ask the host for a new one.</p>
+    </section>
+
+    <section id="invite" hidden style="display:flex;flex-direction:column;gap:18px">
+      <div class="eyebrow">You're invited</div>
+      <img id="cover" class="cover" alt="" hidden>
+      <h1 id="title"></h1>
+      <div class="host" id="host"></div>
+      <div class="card">
+        <div><div class="eyebrow">When</div><div class="value" id="when"></div></div>
+        <div id="where-wrap"><div class="eyebrow">Where</div><div class="value" id="where"></div></div>
+      </div>
+
+      <a id="open" class="btn btn-primary" href="#">Open in Evident</a>
+      <a class="btn btn-secondary" href="#" id="get" aria-disabled="true">Get the app — coming soon</a>
+      <div class="card" style="align-items:center;text-align:center">
+        <div class="eyebrow">Already have the app?</div>
+        <div class="code" id="code"></div>
+        <p class="note">On Home, paste this code under "Got an invite?"</p>
+        <button class="btn btn-secondary" id="copy" type="button">Copy code</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/config.js"></script>
+  <script>
+    (function () {
+      var code = (location.pathname.split('/invite/')[1] || '').split(/[/?#]/)[0].toUpperCase();
+      var $ = function (id) { return document.getElementById(id); };
+      var show = function (id) { $('loading').hidden = true; $(id).hidden = false; };
+
+      function formatWhen(iso) {
+        if (!iso) return 'Date to be confirmed';
+        var d = new Date(iso);
+        var day = d.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Singapore' });
+        var time = d.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Singapore' })
+          .replace(':00', '').replace(':', '.').replace(/\s/g, '').toLowerCase();
+        return day + ' · ' + time;
+      }
+
+      if (!code || !window.EVIDENT_CONFIG) return show('invalid');
+      var cfg = window.EVIDENT_CONFIG;
+
+      fetch(cfg.supabaseUrl + '/rest/v1/rpc/get_invite_preview', {
+        method: 'POST',
+        headers: { apikey: cfg.supabaseKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (e) {
+          if (!e || !e.title) return show('invalid');
+
+          // textContent everywhere: event text is user-written, never trusted as HTML.
+          document.title = e.title + ' · Evident';
+          $('title').textContent = e.title;
+          $('when').textContent = formatWhen(e.date_time);
+          if (e.location) $('where').textContent = e.location; else $('where-wrap').hidden = true;
+          if (e.cover_image) { $('cover').src = e.cover_image; $('cover').hidden = false; }
+
+          var host = $('host');
+          if (e.host_avatar_url) {
+            var img = document.createElement('img'); img.src = e.host_avatar_url; img.alt = ''; host.appendChild(img);
+          } else {
+            var initial = document.createElement('span'); initial.className = 'initial';
+            initial.textContent = (e.host_name || '?').charAt(0).toUpperCase(); host.appendChild(initial);
+          }
+          var by = document.createElement('span'); by.textContent = 'Hosted by ' + e.host_name; host.appendChild(by);
+
+          $('code').textContent = code;
+          $('open').href = 'evident://invite/' + encodeURIComponent(code);
+          $('get').addEventListener('click', function (ev) { ev.preventDefault(); });
+          $('copy').addEventListener('click', function () {
+            navigator.clipboard && navigator.clipboard.writeText(code).then(function () { $('copy').textContent = 'Copied'; });
+          });
+          show('invite');
+        })
+        .catch(function () { show('invalid'); });
+    })();
+  </script>
+</body>
+</html>

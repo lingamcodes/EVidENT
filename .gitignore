@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# web invite page: generated at build time from Vercel env vars
+web/public/config.js

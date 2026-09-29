@@ -53,6 +53,52 @@ export type Database = {
           },
         ]
       }
+      event_invites: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          invited_by: string
+          invitee_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          invited_by: string
+          invitee_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          invited_by?: string
+          invitee_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_invites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_invites_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_question_options: {
         Row: {
           id: string
@@ -122,48 +168,69 @@ export type Database = {
       }
       events: {
         Row: {
+          allow_guest_invites: boolean
           capacity: number | null
           cover_image: string | null
           created_at: string
-          date_time: string
+          date_time: string | null
           description: string | null
+          ends_at: string | null
           external_chat_link: string | null
           host_id: string
           id: string
+          invite_code: string
           location: string | null
+          map_link: string | null
           paynow_amount: number | null
           paynow_reference: string | null
+          rsvp_by: string | null
+          status: string
           title: string
+          updated_at: string
           visibility: Database["public"]["Enums"]["event_visibility"]
         }
         Insert: {
+          allow_guest_invites?: boolean
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
-          date_time: string
+          date_time?: string | null
           description?: string | null
+          ends_at?: string | null
           external_chat_link?: string | null
           host_id: string
           id?: string
+          invite_code?: string
           location?: string | null
+          map_link?: string | null
           paynow_amount?: number | null
           paynow_reference?: string | null
+          rsvp_by?: string | null
+          status?: string
           title: string
+          updated_at?: string
           visibility?: Database["public"]["Enums"]["event_visibility"]
         }
         Update: {
+          allow_guest_invites?: boolean
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
-          date_time?: string
+          date_time?: string | null
           description?: string | null
+          ends_at?: string | null
           external_chat_link?: string | null
           host_id?: string
           id?: string
+          invite_code?: string
           location?: string | null
+          map_link?: string | null
           paynow_amount?: number | null
           paynow_reference?: string | null
+          rsvp_by?: string | null
+          status?: string
           title?: string
+          updated_at?: string
           visibility?: Database["public"]["Enums"]["event_visibility"]
         }
         Relationships: [
@@ -443,9 +510,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_invite_to_event: {
+        Args: { target_event_id: string }
+        Returns: boolean
+      }
       can_view_event: { Args: { target_event_id: string }; Returns: boolean }
       check_account: { Args: { lookup_email: string }; Returns: Json }
+      generate_invite_code: { Args: never; Returns: string }
+      get_invite_preview: { Args: { code: string }; Returns: Json }
       is_event_host: { Args: { target_event_id: string }; Returns: boolean }
+      join_event_by_code: { Args: { code: string }; Returns: string }
+      save_event: {
+        Args: { p_event: Json; p_questions?: Json }
+        Returns: string
+      }
     }
     Enums: {
       account_type: "individual" | "org"

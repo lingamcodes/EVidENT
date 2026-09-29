@@ -3,7 +3,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { Database } from './database.types';
 import { supabase } from './supabase';
@@ -25,6 +25,9 @@ type AuthState = {
   notice: string | null;
   showNotice: (message: string) => void;
   dismissNotice: () => void;
+  /** Invite code from a link opened before signing in; reopened once in the app. */
+  pendingInvite: string | null;
+  clearPendingInvite: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -53,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const dismissNotice = useCallback(() => setNotice(null), []);
+  const [pendingInvite, setPendingInvite] = useState<string | null>(null);
+  const clearPendingInvite = useCallback(() => setPendingInvite(null), []);
+  const sessionRef = useRef<Session | null>(null);
+  sessionRef.current = session;
   const url = Linking.useLinkingURL();
   const userId = session?.user.id;
 
@@ -88,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Email-confirmation and password-reset links open the app with tokens in the URL.
   useEffect(() => {
     if (!url) return;
+    // Invite links need an account: remember the code until sign-in/onboarding is done.
+    const invite = url.match(/invite\/([A-Za-z0-9]+)/);
+    if (invite && !sessionRef.current) setPendingInvite(invite[1].toUpperCase());
+
     // Mark recovery before signing in, so the app never flashes Home/onboarding first.
     const isRecovery = QueryParams.getQueryParams(url).params.type === 'recovery';
     if (isRecovery) setPasswordRecovery(true);
@@ -110,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     notice,
     showNotice: setNotice,
     dismissNotice,
+    pendingInvite,
+    clearPendingInvite,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

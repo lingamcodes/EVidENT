@@ -59,6 +59,10 @@ function RootNavigator() {
         <Stack.Protected guard={signedIn && onboarded}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="set-password" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="events/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="events/[id]/edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="invite/[code]" />
+          <Stack.Screen name="dev-components" />
         </Stack.Protected>
       </Stack>
       <Toast message={notice} onDismiss={dismissNotice} />

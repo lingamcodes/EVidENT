@@ -9,17 +9,20 @@ type Props = {
   onClose: () => void;
   title: string;
   message?: string;
+  /** Extra content between the message and the actions (e.g. a search list). */
+  children?: ReactNode;
   /** Usually one or two <Button>s. */
   actions: ReactNode;
 };
 
-export function Dialog({ visible, onClose, title, message, actions }: Props) {
+export function Dialog({ visible, onClose, title, message, children, actions }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close dialog">
         <Pressable style={styles.dialog} accessibilityRole="alert">
           <Text variant="dialogTitle">{title}</Text>
           {message && <Text variant="body" tone="strong">{message}</Text>}
+          {children}
           <View style={styles.actions}>{actions}</View>
         </Pressable>
       </Pressable>
