@@ -1,13 +1,12 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { Avatar, Button, Card, IconButton, Screen, Text } from '@/components';
+import { Avatar, Button, Card, CoverImage, IconButton, Screen, Text } from '@/components';
 import { useAuth } from '@/lib/auth';
 import { getInvitePreview, joinByCode, type InvitePreview } from '@/lib/events';
 import { formatWhen } from '@/lib/format';
-import { radii, sizes, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 
 /** Opened from an invite link or a pasted code: preview the event, then join it. */
 export default function InviteScreen() {
@@ -58,14 +57,7 @@ export default function InviteScreen() {
       {preview && (
         <>
           <Text variant="eyebrow">You're invited</Text>
-          {preview.cover_image && (
-            <Image
-              source={{ uri: preview.cover_image }}
-              style={{ width: '100%', height: sizes.coverImage, borderRadius: radii.lg }}
-              contentFit="cover"
-              accessibilityLabel="Event cover"
-            />
-          )}
+          {preview.cover_image && <CoverImage uri={preview.cover_image} accessibilityLabel="Event cover" />}
           <View style={{ gap: spacing.xs }}>
             <Text variant="display">{preview.title}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

@@ -1,7 +1,7 @@
-import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { borders, colors, radii, sizes, spacing } from '@/theme/tokens';
+import { CoverImage } from './CoverImage';
 import { Tag } from './Tag';
 import { Text } from './Text';
 
@@ -24,12 +24,8 @@ export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction,
       accessibilityLabel={`${title}. ${meta}`}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.imageWrap}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={[styles.image, styles.placeholder]} />
-        )}
+      {/* The photo sets its own height (its crop shape), so it's never stretched. */}
+      <CoverImage uri={imageUrl ?? null} rounded={false}>
         {badge && (
           <View style={styles.badge}>
             <Tag label={badge} variant="overlay" />
@@ -40,7 +36,7 @@ export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction,
             <Tag label={actionLabel} variant="overlay" />
           </Pressable>
         )}
-      </View>
+      </CoverImage>
       <View style={styles.body}>
         <Text variant="cardTitle" numberOfLines={1}>{title}</Text>
         <Text variant="meta" numberOfLines={1}>{meta}</Text>
@@ -59,9 +55,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   pressed: { backgroundColor: colors.surfaceSunken },
-  imageWrap: { height: sizes.eventCard.imageHeight },
-  image: { width: '100%', height: '100%' },
-  placeholder: { backgroundColor: colors.neutralMuted },
   badge: { position: 'absolute', top: spacing.sm + 1, left: spacing.sm + 1 },
   action: { position: 'absolute', top: spacing.sm + 1, right: spacing.sm + 1 },
   body: { gap: spacing.xxs, paddingTop: spacing.sm, paddingBottom: spacing.md - 2, paddingHorizontal: spacing.md },

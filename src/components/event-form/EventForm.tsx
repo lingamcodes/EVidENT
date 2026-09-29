@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
@@ -9,6 +8,7 @@ import {
   inviteLink,
   loadFollowing,
   pickAndUploadCover,
+  rsvpByConflict,
   saveEvent,
   validateForPublish,
   type EventForm as Form,
@@ -16,11 +16,12 @@ import {
   type Person,
 } from '@/lib/events';
 import { formatDate } from '@/lib/format';
-import { radii, sizes, spacing } from '@/theme/tokens';
+import { sizes, spacing } from '@/theme/tokens';
 import { AddTile } from '../AddTile';
 import { Button } from '../Button';
 import { ChoiceMarker } from '../ChoiceMarker';
 import { ChoiceRow } from '../ChoiceRow';
+import { CoverImage } from '../CoverImage';
 import { DateTimeField } from '../DateTimeField';
 import { Dialog } from '../Dialog';
 import { Divider } from '../Divider';
@@ -53,7 +54,12 @@ export function EventForm({ initial }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
-  const errors: FormErrors = useMemo(() => (attempted ? validateForPublish(form) : {}), [attempted, form]);
+  const errors: FormErrors = useMemo(() => {
+    const found = attempted ? validateForPublish(form) : {};
+    // RSVP-by after the start is flagged as soon as it happens, not only on Publish.
+    const rsvpConflict = rsvpByConflict(form);
+    return rsvpConflict ? { ...found, rsvpBy: rsvpConflict } : found;
+  }, [attempted, form]);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -73,6 +79,10 @@ export function EventForm({ initial }: Props) {
   const save = async (status: 'draft' | 'published') => {
     if (!userId) return;
     setError(undefined);
+    if (rsvpByConflict(form)) {
+      setError('Fix the RSVP-by date first — it has to be before the event starts.');
+      return;
+    }
     if (status === 'published') {
       setAttempted(true);
       if (Object.keys(validateForPublish(form)).length) {
@@ -147,7 +157,7 @@ export function EventForm({ initial }: Props) {
       {/* Cover */}
       {form.coverUrl ? (
         <View style={styles.stack}>
-          <Image source={{ uri: form.coverUrl }} style={styles.cover} contentFit="cover" accessibilityLabel="Cover photo" />
+          <CoverImage uri={form.coverUrl} accessibilityLabel="Cover photo" />
           <Button label="Change cover" variant="secondary" size="sm" onPress={addCover} loading={uploading} />
         </View>
       ) : (
@@ -204,7 +214,14 @@ export function EventForm({ initial }: Props) {
           <>
             <View style={styles.row}>
               <View style={styles.flex}>
-                <DateTimeField mode="date" value={form.rsvpByDate} onChange={(d) => set('rsvpByDate', d)} placeholder="Date" size="sm" />
+                <DateTimeField
+                  mode="date"
+                  value={form.rsvpByDate}
+                  onChange={(d) => set('rsvpByDate', d)}
+                  placeholder="Date"
+                  size="sm"
+                  maximumDate={form.startDate ?? undefined}
+                />
               </View>
               <View style={styles.flex}>
                 <DateTimeField mode="time" value={form.rsvpByTime} onChange={(d) => set('rsvpByTime', d)} placeholder="Time" size="sm" />
@@ -435,7 +452,6 @@ const styles = StyleSheet.create({
   spread: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2 },
   flex: { flex: 1 },
-  cover: { width: '100%', height: sizes.coverImage, borderRadius: radii.lg },
   paxInput: { width: sizes.paxInput },
   dialogList: { maxHeight: sizes.dialogListMax },
 });

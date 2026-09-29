@@ -7,9 +7,12 @@ type Options = {
   bucket: 'avatars' | 'event-covers';
   /** Path inside the bucket; must start with the user's id (storage policy). */
   path: string;
-  /** Crop ratio offered in the picker. */
-  aspect: [number, number];
-  /** Output width in px; height follows the crop ratio. */
+  /**
+   * Fixed crop ratio (Android only — iOS's crop is always square). Leave out to
+   * keep whatever crop the user picks.
+   */
+  aspect?: [number, number];
+  /** Max output width in px; height follows the photo's own shape (never stretched). */
   width: number;
   /** JPEG quality 0–1. */
   quality: number;
@@ -28,8 +31,10 @@ export async function pickAndUploadImage({ bucket, path, aspect, width, quality 
   });
   if (picked.canceled) return null;
 
-  const rendered = await ImageManipulator.manipulate(picked.assets[0].uri)
-    .resize({ width, height: Math.round((width * aspect[1]) / aspect[0]) })
+  const asset = picked.assets[0];
+  // Width only, so the crop's shape is kept; never enlarge small photos.
+  const rendered = await ImageManipulator.manipulate(asset.uri)
+    .resize({ width: Math.min(width, asset.width || width) })
     .renderAsync();
   const image = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: quality });
 

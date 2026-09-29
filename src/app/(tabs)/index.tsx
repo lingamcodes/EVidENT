@@ -59,7 +59,7 @@ export default function HomeScreen() {
           </Card>
         )}
         {!!events?.length && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, alignItems: 'flex-start' }}>
             {events.map((e) => (
               <EventCard
                 key={e.id}

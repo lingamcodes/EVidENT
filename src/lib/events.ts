@@ -72,9 +72,32 @@ function endsAt(form: EventForm) {
   return day ? combineDateAndTime(day, form.endTime) : null;
 }
 
+/** RSVP deadline; with no time picked it means the end of that day. */
 function rsvpBy(form: EventForm) {
   if (!form.rsvpByOn || !form.rsvpByDate) return null;
-  return form.rsvpByTime ? combineDateAndTime(form.rsvpByDate, form.rsvpByTime) : form.rsvpByDate;
+  if (form.rsvpByTime) return combineDateAndTime(form.rsvpByDate, form.rsvpByTime);
+  const endOfDay = new Date(form.rsvpByDate);
+  endOfDay.setHours(23, 59, 0, 0);
+  return endOfDay;
+}
+
+/**
+ * RSVP-by later than the event's start. Checked live and blocks both Publish and
+ * Save draft (the database rejects it too).
+ */
+export function rsvpByConflict(form: EventForm): string | undefined {
+  const start = startsAt(form);
+  const rsvp = rsvpBy(form);
+  if (!start || !rsvp) return undefined;
+  // Start time not picked yet: only a later *day* is a clear conflict.
+  if (!form.startTime) {
+    const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    return day(rsvp) > day(start) ? 'RSVP-by must be before the event starts' : undefined;
+  }
+  if (rsvp <= start) return undefined;
+  return form.rsvpByTime || rsvp.toDateString() !== start.toDateString()
+    ? 'RSVP-by must be before the event starts'
+    : 'RSVP-by is the same day as the event — pick a time before it starts';
 }
 
 function capacity(form: EventForm) {
@@ -92,14 +115,14 @@ export function validateForPublish(form: EventForm): FormErrors {
   const errors: FormErrors = {};
   const start = startsAt(form);
   const end = endsAt(form);
-  const rsvp = rsvpBy(form);
 
   if (!form.title.trim()) errors.title = 'Give your event a name';
   if (!form.startDate || !form.startTime) errors.start = 'Pick a start date and time';
   if (form.multiDay && !form.endDate) errors.end = 'Pick an end date';
   if (start && end && end <= start) errors.end = 'Ends before it starts';
   if (form.rsvpByOn && !form.rsvpByDate) errors.rsvpBy = 'Pick an RSVP-by date, or switch it off';
-  if (start && rsvp && rsvp > start) errors.rsvpBy = 'Must fall before the start date';
+  const rsvpConflict = rsvpByConflict(form);
+  if (rsvpConflict) errors.rsvpBy = rsvpConflict;
   if (!form.location.trim()) errors.location = 'Where is it?';
 
   const cap = capacity(form);
@@ -273,12 +296,11 @@ export async function deleteEvent(id: string) {
   if (error) throw error;
 }
 
-/** 3:2 cover, 1600px wide JPEG at 75% (~200–400 KB), stored under the user's folder. */
+/** Cover in whatever crop the host picks, up to 1600px wide JPEG at 75% (~200–400 KB). */
 export function pickAndUploadCover(userId: string) {
   return pickAndUploadImage({
     bucket: 'event-covers',
     path: `${userId}/${Date.now()}.jpg`,
-    aspect: [3, 2],
     width: 1600,
     quality: 0.75,
   });

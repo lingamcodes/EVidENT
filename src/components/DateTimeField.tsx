@@ -19,10 +19,12 @@ type Props = {
   size?: 'md' | 'sm';
   /** Earliest selectable date (date mode). */
   minimumDate?: Date;
+  /** Latest selectable date (date mode). */
+  maximumDate?: Date;
 };
 
 /** Input-looking field that opens the phone's native date or time picker. */
-export function DateTimeField({ mode, value, onChange, label, placeholder, error, hint, size, minimumDate }: Props) {
+export function DateTimeField({ mode, value, onChange, label, placeholder, error, hint, size, minimumDate, maximumDate }: Props) {
   const [iosOpen, setIosOpen] = useState(false);
   const [draft, setDraft] = useState<Date>(value ?? new Date());
   const insets = useSafeAreaInsets();
@@ -34,6 +36,7 @@ export function DateTimeField({ mode, value, onChange, label, placeholder, error
         value: start,
         mode,
         minimumDate,
+        maximumDate,
         is24Hour: false,
         onChange: (event, picked) => {
           if (event.type === 'set' && picked) onChange(picked);
@@ -70,6 +73,7 @@ export function DateTimeField({ mode, value, onChange, label, placeholder, error
               mode={mode}
               display="spinner"
               minimumDate={minimumDate}
+              maximumDate={maximumDate}
               onChange={(_e, picked) => picked && setDraft(picked)}
               textColor={colors.text}
               accentColor={colors.accent}

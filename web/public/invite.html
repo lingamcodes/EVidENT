@@ -20,7 +20,8 @@
     main { max-width: 440px; margin: 0 auto; padding: 28px 22px 48px; display: flex; flex-direction: column; gap: 18px; }
     .brand { font: 400 22px var(--heading); color: var(--accent); }
     .eyebrow { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--subtle); }
-    .cover { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 28px; display: block; background: var(--surface); }
+    /* Keeps the photo's own shape like the app; very tall ones are capped at 4:5 and trimmed. */
+    .cover { width: 100%; height: auto; max-height: min(125vw, 550px); object-fit: cover; border-radius: 28px; display: block; background: var(--surface); }
     h1 { margin: 0; font: 400 34px/1.05 var(--heading); }
     .host { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
     .host img, .host .initial { width: 30px; height: 30px; border-radius: 999px; object-fit: cover; }

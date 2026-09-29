@@ -9,6 +9,7 @@ export { Card } from './Card';
 export { Chip } from './Chip';
 export { ChoiceMarker } from './ChoiceMarker';
 export { ChoiceRow } from './ChoiceRow';
+export { CoverImage } from './CoverImage';
 export { DateTimeField } from './DateTimeField';
 export { Dialog } from './Dialog';
 export { Divider } from './Divider';
