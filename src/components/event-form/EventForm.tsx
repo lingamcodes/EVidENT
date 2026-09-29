@@ -111,7 +111,9 @@ export function EventForm({ initial }: Props) {
       await deleteEvent(form.id);
       setConfirmDelete(false);
       showNotice('Event deleted.');
-      close();
+      // The event page this was opened from no longer exists: go all the way back to the tabs.
+      if (router.canDismiss()) router.dismissAll();
+      else router.replace('/');
     } catch (e) {
       setConfirmDelete(false);
       setError(e instanceof Error ? e.message : 'Could not delete the event.');
@@ -142,7 +144,8 @@ export function EventForm({ initial }: Props) {
       <View style={styles.header}>
         <IconButton icon={<Text variant="heading">‹</Text>} onPress={close} accessibilityLabel="Back" variant="ghost" />
         <Text variant="label" tone="muted">{editing ? 'Edit event' : 'New event'}</Text>
-        <IconButton icon={<Text variant="heading">×</Text>} onPress={close} accessibilityLabel="Close" variant="ghost" />
+        {/* Keeps the title centred now that there's no close button. */}
+        <View style={styles.headerSpacer} />
       </View>
 
       <Input
@@ -447,6 +450,7 @@ function InviteDialog({
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerSpacer: { width: sizes.iconButton },
   stack: { gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   spread: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },

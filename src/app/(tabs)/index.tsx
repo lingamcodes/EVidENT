@@ -66,10 +66,11 @@ export default function HomeScreen() {
                 title={e.title}
                 meta={[formatWhen(e.date_time), e.location].filter(Boolean).join(' · ')}
                 imageUrl={e.cover_image}
-                badge={e.status === 'draft' ? 'Draft' : e.visibility === 'private' ? 'Private' : undefined}
+                badge={e.status === 'published' && e.visibility === 'private' ? 'Private' : undefined}
+                dimmed={e.status === 'draft'}
                 actionLabel="Manage"
                 onAction={() => router.push({ pathname: '/events/[id]/edit', params: { id: e.id } })}
-                onPress={() => router.push({ pathname: '/events/[id]/edit', params: { id: e.id } })}
+                onPress={() => router.push({ pathname: '/events/[id]', params: { id: e.id } })}
               />
             ))}
           </ScrollView>

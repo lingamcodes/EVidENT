@@ -13,7 +13,7 @@ export default function InviteScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const { clearPendingInvite } = useAuth();
   const [preview, setPreview] = useState<InvitePreview | null | undefined>(undefined);
-  const [joined, setJoined] = useState(false);
+  const [joinedId, setJoinedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -28,8 +28,7 @@ export default function InviteScreen() {
     setBusy(true);
     setError(undefined);
     try {
-      await joinByCode(code);
-      setJoined(true);
+      setJoinedId(await joinByCode(code));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not join this event.');
     } finally {
@@ -80,10 +79,15 @@ export default function InviteScreen() {
             </View>
           </Card>
 
-          {joined ? (
+          {joinedId ? (
             <View style={{ gap: spacing.sm }}>
-              <Text variant="body" tone="success">You're in. The event page with RSVP is coming next.</Text>
-              <Button label="Go home" onPress={goHome} fullWidth />
+              <Text variant="body" tone="success">You're in. RSVP is coming next.</Text>
+              <Button
+                label="View event"
+                onPress={() => router.replace({ pathname: '/events/[id]', params: { id: joinedId } })}
+                fullWidth
+              />
+              <Button label="Go home" variant="ghost" onPress={goHome} />
             </View>
           ) : (
             <View style={{ gap: spacing.sm }}>

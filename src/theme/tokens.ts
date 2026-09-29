@@ -145,6 +145,7 @@ export const sizes = {
   /** Cover photos keep their own shape (width ÷ height), clamped to this range. */
   coverAspect: { fallback: 3 / 2, min: 4 / 5, max: 2 },
   dialogListMax: 238,
+  guestListMax: 430,
   paxInput: 84,
   tabBarCreate: 42,
   progressBar: 4,
@@ -161,6 +162,8 @@ export const borders = {
 
 export const opacity = {
   disabled: 0.45,
+  /** Drafts on Home: greyed out so they read as not-yet-live. */
+  dimmed: 0.5,
 } as const;
 
 /* ── Shadows (RN boxShadow strings) ── */

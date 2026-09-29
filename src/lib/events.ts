@@ -248,6 +248,80 @@ export async function loadFollowing(userId: string): Promise<Person[]> {
   return (data ?? []).map((r) => r.users).filter((u): u is Person => !!u);
 }
 
+export type EventPage = {
+  id: string;
+  title: string;
+  status: 'draft' | 'published';
+  visibility: string;
+  dateTime: string | null;
+  endsAt: string | null;
+  location: string | null;
+  mapLink: string | null;
+  coverUrl: string | null;
+  notes: string | null;
+  capacity: number | null;
+  inviteCode: string;
+  host: Person;
+  isHost: boolean;
+  going: Person[];
+  maybe: Person[];
+  notGoing: Person[];
+  /** Invited (or joined by link) but no RSVP yet. */
+  pending: Person[];
+};
+
+/**
+ * Everything the event page (design 11a) shows. RLS decides what comes back:
+ * the host sees every RSVP and invite; a guest only their own.
+ */
+export async function loadEventPage(id: string, viewerId: string): Promise<EventPage> {
+  const [{ data: event, error }, { data: rsvpRows }, { data: inviteRows }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('*, host:users!events_host_id_fkey(id, name, username, avatar_url)')
+      .eq('id', id)
+      .single(),
+    supabase.from('rsvps').select('status, user:users!rsvps_user_id_fkey(id, name, username, avatar_url)').eq('event_id', id),
+    supabase.from('event_invites').select('invitee:users!event_invites_invitee_id_fkey(id, name, username, avatar_url)').eq('event_id', id),
+  ]);
+  if (error) throw error;
+
+  const rsvps = (rsvpRows ?? []).filter((r): r is typeof r & { user: Person } => !!r.user);
+  const byStatus = (status: string) => rsvps.filter((r) => r.status === status).map((r) => r.user);
+  const replied = new Set(rsvps.map((r) => r.user.id));
+  const pending = (inviteRows ?? [])
+    .map((r) => r.invitee)
+    .filter((u): u is Person => !!u && !replied.has(u.id));
+
+  return {
+    id: event.id,
+    title: event.title,
+    status: event.status as EventPage['status'],
+    visibility: event.visibility,
+    dateTime: event.date_time,
+    endsAt: event.ends_at,
+    location: event.location,
+    mapLink: event.map_link,
+    coverUrl: event.cover_image,
+    notes: event.description,
+    capacity: event.capacity,
+    inviteCode: event.invite_code,
+    host: event.host as Person,
+    isHost: event.host_id === viewerId,
+    going: byStatus('yes'),
+    maybe: byStatus('maybe'),
+    notGoing: byStatus('no'),
+    pending,
+  };
+}
+
+/** Opens the host's map link, or searches the address in the phone's maps. */
+export function directionsUrl(page: Pick<EventPage, 'mapLink' | 'location'>) {
+  if (page.mapLink) return /^https?:\/\//.test(page.mapLink) ? page.mapLink : `https://${page.mapLink}`;
+  if (page.location) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(page.location)}`;
+  return null;
+}
+
 /* ── Writes ──────────────────────────────────────────────────────────── */
 
 /** Saves event + questionnaire in one transaction, then syncs private invites. Returns the event id. */

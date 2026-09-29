@@ -26,3 +26,20 @@ export function combineDateAndTime(day: Date, time: Date) {
   combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
   return combined;
 }
+
+/** "Sunday 24 August" — the big date line on the event page. */
+export function formatLongDate(date: Date) {
+  return date.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+/** Event page date + time lines, covering single-day and multi-day events. */
+export function formatEventWhen(startIso: string | null, endIso: string | null) {
+  if (!startIso) return { date: 'Date to be confirmed', time: '' };
+  const start = new Date(startIso);
+  const end = endIso ? new Date(endIso) : null;
+  if (end && end.toDateString() !== start.toDateString()) {
+    const short = (d: Date) => d.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' });
+    return { date: `${short(start)} – ${short(end)}`, time: `${formatTime(start)} – ${formatTime(end)}` };
+  }
+  return { date: formatLongDate(start), time: end ? `${formatTime(start)} – ${formatTime(end)}` : formatTime(start) };
+}
