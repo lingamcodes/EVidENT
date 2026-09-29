@@ -1,4 +1,3 @@
-import { makeRedirectUri } from 'expo-auth-session';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -31,8 +30,6 @@ export default function WelcomeScreen() {
       </View>
 
       <Text variant="caption" align="center">By continuing you agree to the community rules. Be normal.</Text>
-      {/* TEMP debug: the return address sent to Supabase. Remove once Google sign-in works in Expo Go. */}
-      <Text variant="caption" align="center" selectable>Return address: {makeRedirectUri()}</Text>
     </Screen>
   );
 }
