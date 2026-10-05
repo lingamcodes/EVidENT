@@ -9,6 +9,7 @@ import {
   CoverImage,
   Dialog,
   Divider,
+  Icon,
   IconButton,
   PersonRow,
   Screen,
@@ -31,6 +32,7 @@ export default function EventScreen() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [social, setSocial] = useState<EventSocial | null>(null);
   const [replying, setReplying] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   // Reload on focus so edits made in the editor show up when coming back.
   useFocusEffect(
@@ -105,7 +107,7 @@ export default function EventScreen() {
               <Button label="Edit event" onPress={edit} fullWidth />
             </View>
             <IconButton
-              icon={<Text variant="heading" tone="accent">↗</Text>}
+              icon={<Icon name={{ ios: 'square.and.arrow.up', android: 'share' }} tone="accent" />}
               onPress={share}
               accessibilityLabel="Invite friends"
               variant="outline"
@@ -113,7 +115,14 @@ export default function EventScreen() {
             />
           </>
         ) : social ? (
-          <GuestFooter social={social} busy={replying} onRespond={respond} onOpenAnswers={openAnswers} />
+          <GuestFooter
+            social={social}
+            busy={replying}
+            onRespond={respond}
+            onOpenAnswers={openAnswers}
+            onShare={share}
+            canShare={published}
+          />
         ) : undefined
       }
     >
@@ -175,7 +184,13 @@ export default function EventScreen() {
             )}
             <Text variant="label" tone="muted">{socialLine(social)}</Text>
           </View>
-          <GuestStatus social={social} busy={replying} onRespond={respond} onOpenAnswers={openAnswers} />
+          <GuestStatus
+            social={social}
+            busy={replying}
+            onRespond={respond}
+            onOpenAnswers={openAnswers}
+            onLeave={() => setConfirmLeave(true)}
+          />
         </View>
       )}
 
@@ -188,6 +203,32 @@ export default function EventScreen() {
           </View>
         </>
       )}
+
+      <Dialog
+        visible={confirmLeave}
+        onClose={() => setConfirmLeave(false)}
+        title="Leave this event?"
+        message={
+          social?.waitlist_count
+            ? 'Your spot goes to the next person on the waitlist.'
+            : "The host will see that you can't make it."
+        }
+        actions={
+          <>
+            <Button label="Stay" variant="secondary" size="sm" onPress={() => setConfirmLeave(false)} />
+            <Button
+              label="Leave event"
+              variant="danger"
+              size="sm"
+              onPress={async () => {
+                setConfirmLeave(false);
+                await respond('no');
+                showNotice(`You left ${page.title}.`);
+              }}
+            />
+          </>
+        }
+      />
 
       <Dialog
         visible={guestsOpen}
@@ -236,56 +277,66 @@ type GuestProps = {
   onOpenAnswers: () => void;
 };
 
-/** Pinned RSVP buttons for guests (design 4c): I'm going · Maybe. */
-function GuestFooter({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
+/** Pinned buttons for guests (design 4c): I'm going · Share. */
+function GuestFooter({
+  social,
+  busy,
+  onRespond,
+  onOpenAnswers,
+  onShare,
+  canShare,
+}: GuestProps & { onShare: () => void; canShare: boolean }) {
   const status = social.my_status;
   const waitlisted = status === 'yes' && social.my_waitlist_rank > 0;
+  const share = (
+    <IconButton
+      icon={<Icon name={{ ios: 'square.and.arrow.up', android: 'share' }} tone="accent" />}
+      onPress={onShare}
+      accessibilityLabel="Share with friends"
+      variant="outline"
+      disabled={!canShare}
+    />
+  );
 
-  if (!social.rsvp_open && !status) {
+  if (!social.rsvp_open && status !== 'yes') {
     return (
-      <View style={{ flex: 1, alignItems: 'center' }}>
-        <Text variant="label" tone="muted">RSVPs for this event have closed</Text>
-      </View>
-    );
-  }
-
-  if (status === 'yes') {
-    return (
-      <View style={{ flex: 1 }}>
-        <Button
-          label={waitlisted ? `Waitlisted · #${social.my_waitlist_rank}` : "You're going ✓"}
-          variant="soft"
-          onPress={social.has_questions ? onOpenAnswers : () => {}}
-          fullWidth
-        />
-      </View>
+      <>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Text variant="label" tone="muted" align="center">RSVPs for this event have closed</Text>
+        </View>
+        {share}
+      </>
     );
   }
 
   return (
     <>
       <View style={{ flex: 1 }}>
-        <Button label="I'm going" onPress={() => onRespond('yes')} loading={busy} disabled={!social.rsvp_open} fullWidth />
+        {status === 'yes' ? (
+          <Button
+            label={waitlisted ? `Waitlisted · #${social.my_waitlist_rank}` : "You're going ✓"}
+            variant="soft"
+            onPress={social.has_questions ? onOpenAnswers : () => {}}
+            fullWidth
+          />
+        ) : (
+          <Button label="I'm going" onPress={() => onRespond('yes')} loading={busy} fullWidth />
+        )}
       </View>
-      <Button
-        label="Maybe"
-        variant={status === 'maybe' ? 'soft' : 'secondary'}
-        onPress={() => onRespond(status === 'maybe' ? null : 'maybe')}
-        disabled={busy || !social.rsvp_open}
-      />
+      {share}
     </>
   );
 }
 
 /** Your current reply on the page, with ways to change it. */
-function GuestStatus({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
+function GuestStatus({ social, busy, onRespond, onOpenAnswers, onLeave }: GuestProps & { onLeave: () => void }) {
   const status = social.my_status;
   if (!status) return null;
 
   const line = {
     yes: social.my_waitlist_rank > 0 ? `You're #${social.my_waitlist_rank} on the waitlist` : "You're going",
     maybe: 'You said maybe',
-    no: "You said you can't make it",
+    no: 'You left this event',
   }[status];
 
   return (
@@ -296,9 +347,7 @@ function GuestStatus({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
           {status === 'yes' && social.has_questions && (
             <Button label="Your answers" variant="secondary" size="sm" onPress={onOpenAnswers} />
           )}
-          {status !== 'no' && (
-            <Button label="Can't go" variant="ghost" size="sm" onPress={() => onRespond('no')} disabled={busy} />
-          )}
+          {status !== 'no' && <Button label="Leave event" variant="dangerSoft" size="sm" onPress={onLeave} disabled={busy} />}
           {status === 'no' && (
             <Button label="Undo" variant="ghost" size="sm" onPress={() => onRespond(null)} disabled={busy} />
           )}

@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 
-import { AnswerPreview, Button, Card, ChoiceRow, IconButton, Input, Screen, Text } from '@/components';
+import { AnswerPreview, Button, Card, ChoiceRow, Dialog, IconButton, Input, Screen, Text } from '@/components';
 import { isAllergyOption } from '@/components/questionnaire/types';
 import { useAuth } from '@/lib/auth';
 import { directionsUrl, loadEventPage, type EventPage } from '@/lib/events';
@@ -38,6 +38,8 @@ export default function RsvpScreen() {
   const [attempted, setAttempted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -69,6 +71,21 @@ export default function RsvpScreen() {
   const missing = missingAnswers(questions, answers);
 
   const confirming = social?.my_status !== 'yes';
+
+  /** Can't make it after all: records "can't go" (the host sees it) and frees the spot. */
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      await setRsvp(id, 'no');
+      setConfirmLeave(false);
+      showNotice(`You left ${page?.title ?? 'the event'}.`);
+      back();
+    } catch (e) {
+      setConfirmLeave(false);
+      setError(e instanceof Error ? e.message : 'Could not leave the event.');
+      setLeaving(false);
+    }
+  };
 
   const submit = async () => {
     setAttempted(true);
@@ -118,11 +135,14 @@ export default function RsvpScreen() {
   return (
     <Screen
       footer={
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, gap: spacing.sm }}>
           {questions.length || confirming ? (
             <Button label={submitLabel} onPress={submit} loading={saving} disabled={confirming && !social.rsvp_open} fullWidth />
           ) : (
             <Button label="Done" onPress={back} fullWidth />
+          )}
+          {!confirming && (
+            <Button label="Leave event" variant="dangerSoft" onPress={() => setConfirmLeave(true)} disabled={saving || leaving} fullWidth />
           )}
         </View>
       }
@@ -211,6 +231,23 @@ export default function RsvpScreen() {
       )}
 
       {error && <Text variant="small" tone="danger">{error}</Text>}
+
+      <Dialog
+        visible={confirmLeave}
+        onClose={() => setConfirmLeave(false)}
+        title="Leave this event?"
+        message={
+          social.waitlist_count
+            ? 'Your spot goes to the next person on the waitlist.'
+            : "The host will see that you can't make it."
+        }
+        actions={
+          <>
+            <Button label="Stay" variant="secondary" size="sm" onPress={() => setConfirmLeave(false)} />
+            <Button label="Leave event" variant="danger" size="sm" onPress={leave} loading={leaving} />
+          </>
+        }
+      />
     </Screen>
   );
 }
