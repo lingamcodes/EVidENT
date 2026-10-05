@@ -144,6 +144,8 @@ export const sizes = {
   coverImage: 250,
   /** Cover photos keep their own shape (width ÷ height), clamped to this range. */
   coverAspect: { fallback: 3 / 2, min: 4 / 5, max: 2 },
+  /** Every event card (carousels, invites) uses this one shape so they line up. */
+  cardCoverAspect: 3 / 2,
   dialogListMax: 238,
   guestListMax: 430,
   paxInput: 84,

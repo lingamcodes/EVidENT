@@ -549,6 +549,10 @@ export type Database = {
       }
       is_event_host: { Args: { target_event_id: string }; Returns: boolean }
       join_event_by_code: { Args: { code: string }; Returns: string }
+      rsvp_with_answers: {
+        Args: { p_answers: Json; p_event_id: string }
+        Returns: Json
+      }
       save_event: {
         Args: { p_event: Json; p_questions?: Json }
         Returns: string

@@ -141,8 +141,8 @@ export async function loadMyAnswers(eventId: string, userId: string): Promise<An
   return answers;
 }
 
-export async function saveAnswers(eventId: string, questions: GuestQuestion[], answers: Answers) {
-  const payload = questions.flatMap((q) => {
+function answersPayload(questions: GuestQuestion[], answers: Answers) {
+  return questions.flatMap((q) => {
     const a = answers[q.id];
     if (!a) return [];
     if (q.type === 'short') return a.text.trim() ? [{ question_id: q.id, text_answer: a.text.trim() }] : [];
@@ -152,7 +152,27 @@ export async function saveAnswers(eventId: string, questions: GuestQuestion[], a
       text_answer: a.optionText[optionId]?.trim() ?? '',
     }));
   });
-  const { error } = await supabase.rpc('save_rsvp_answers', { p_event_id: eventId, p_answers: payload });
+}
+
+/**
+ * Accepting an event with a questionnaire: answers + "yes" in one step. You're only
+ * going (or waitlisted) once this succeeds — the database rejects incomplete answers.
+ */
+export async function rsvpWithAnswers(eventId: string, questions: GuestQuestion[], answers: Answers): Promise<RsvpResult> {
+  const { data, error } = await supabase.rpc('rsvp_with_answers', {
+    p_event_id: eventId,
+    p_answers: answersPayload(questions, answers),
+  });
+  if (error) throw error;
+  return data as unknown as RsvpResult;
+}
+
+/** Editing answers after you're already going. */
+export async function saveAnswers(eventId: string, questions: GuestQuestion[], answers: Answers) {
+  const { error } = await supabase.rpc('save_rsvp_answers', {
+    p_event_id: eventId,
+    p_answers: answersPayload(questions, answers),
+  });
   if (error) throw error;
 }
 

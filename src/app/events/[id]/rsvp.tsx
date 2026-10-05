@@ -12,14 +12,19 @@ import {
   loadMyAnswers,
   loadQuestions,
   missingAnswers,
+  rsvpWithAnswers,
   saveAnswers,
+  setRsvp,
   type Answers,
   type EventSocial,
   type GuestQuestion,
 } from '@/lib/rsvp';
 import { spacing } from '@/theme/tokens';
 
-/** "You're going" (design 4e): confirmation + the host's questions. Also used to edit answers later. */
+/**
+ * The host's questionnaire (design 4e). Not going yet → answering + "Confirm" is what
+ * makes you going (or waitlisted). Already going → edit your answers.
+ */
 export default function RsvpScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session, showNotice } = useAuth();
@@ -63,14 +68,25 @@ export default function RsvpScreen() {
 
   const missing = missingAnswers(questions, answers);
 
+  const confirming = social?.my_status !== 'yes';
+
   const submit = async () => {
     setAttempted(true);
     if (missing) return setError(`Answer the ${missing === 1 ? 'remaining question' : `${missing} remaining questions`} first.`);
     setSaving(true);
     setError(undefined);
     try {
-      await saveAnswers(id, questions, answers);
-      showNotice('Answers sent to the host.');
+      if (confirming) {
+        const result = questions.length ? await rsvpWithAnswers(id, questions, answers) : await setRsvp(id, 'yes');
+        showNotice(
+          result.waitlisted
+            ? `The event is full — you're #${result.waitlist_rank} on the waitlist. Your answers are saved.`
+            : "You're going! Your answers went to the host.",
+        );
+      } else {
+        await saveAnswers(id, questions, answers);
+        showNotice('Answers updated.');
+      }
       back();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your answers.');
@@ -90,25 +106,25 @@ export default function RsvpScreen() {
   const when = formatEventWhen(page.dateTime, page.endsAt);
   const directions = directionsUrl(page);
   const waitlisted = social.my_status === 'yes' && social.my_waitlist_rank > 0;
-  const heading = social.my_status === 'yes' ? (waitlisted ? "You're on the waitlist" : "You're going") : 'Your answers';
-  const intro = waitlisted
-    ? `You're #${social.my_waitlist_rank} on the waitlist — you'll get a spot if someone drops out.`
-    : questions.length
-      ? `Your spot is saved. Answer a few questions from ${page.host.name.split(' ')[0]} below.`
-      : 'Your spot is saved. See you there.';
+  const hostFirst = page.host.name.split(' ')[0];
+  const heading = confirming ? 'Almost there' : waitlisted ? "You're on the waitlist" : "You're going";
+  const intro = confirming
+    ? `Answer ${hostFirst}'s questions to confirm your spot. You're not on the guest list until you submit.`
+    : waitlisted
+      ? `You're #${social.my_waitlist_rank} on the waitlist — you'll get a spot if someone drops out.`
+      : 'Your spot is saved. You can update your answers here.';
+  const submitLabel = confirming ? "Confirm — I'm going" : 'Save answers';
 
   return (
     <Screen
       footer={
-        questions.length ? (
-          <View style={{ flex: 1 }}>
-            <Button label="Submit answers" onPress={submit} loading={saving} fullWidth />
-          </View>
-        ) : (
-          <View style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
+          {questions.length || confirming ? (
+            <Button label={submitLabel} onPress={submit} loading={saving} disabled={confirming && !social.rsvp_open} fullWidth />
+          ) : (
             <Button label="Done" onPress={back} fullWidth />
-          </View>
-        )
+          )}
+        </View>
       }
     >
       <IconButton icon={<Text variant="heading">‹</Text>} onPress={back} accessibilityLabel="Back" variant="ghost" />
@@ -140,7 +156,7 @@ export default function RsvpScreen() {
 
       {questions.length > 0 && (
         <View style={{ gap: spacing.lg }}>
-          <Text variant="heading">A few questions from {page.host.name.split(' ')[0]}</Text>
+          <Text variant="heading">A few questions from {hostFirst}</Text>
           {questions.map((q) => {
             const a = answerFor(q.id);
             const unanswered = attempted && (q.type === 'short' ? !a.text.trim() : !a.optionIds.length);

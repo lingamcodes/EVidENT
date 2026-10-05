@@ -26,8 +26,8 @@ export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction,
       accessibilityLabel={`${title}. ${meta}`}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      {/* The photo sets its own height (its crop shape), so it's never stretched. */}
-      <CoverImage uri={imageUrl ?? null} rounded={false}>
+      {/* Standard card shape so carousels line up; the photo fills it without stretching. */}
+      <CoverImage uri={imageUrl ?? null} rounded={false} aspect={sizes.cardCoverAspect}>
         {dimmed && <View style={styles.dimPhoto} />}
         {badge && (
           <View style={styles.badge}>

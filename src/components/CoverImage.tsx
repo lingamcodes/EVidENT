@@ -8,6 +8,11 @@ type Props = {
   uri: string | null;
   /** Rounded corners for standalone use; off when it sits inside a card. */
   rounded?: boolean;
+  /**
+   * Fixed box shape (width ÷ height) so cards line up — the photo fills it, trimmed
+   * at the edges, never stretched. Leave out to follow the photo's own shape.
+   */
+  aspect?: number;
   /** Overlays such as badges, positioned over the photo. */
   children?: ReactNode;
   accessibilityLabel?: string;
@@ -20,8 +25,9 @@ const clamp = (ratio: number) => Math.min(max, Math.max(min, ratio));
  * Event cover whose box follows the photo's own shape (as cropped in the picker),
  * so it is never stretched. Very tall/wide photos are clamped and trimmed at the edges.
  */
-export function CoverImage({ uri, rounded = true, children, accessibilityLabel }: Props) {
-  const [ratio, setRatio] = useState(fallback);
+export function CoverImage({ uri, rounded = true, aspect, children, accessibilityLabel }: Props) {
+  const [natural, setNatural] = useState(fallback);
+  const ratio = aspect ?? natural;
 
   return (
     <View style={[styles.box, { aspectRatio: ratio }, rounded && styles.rounded]}>
@@ -33,7 +39,7 @@ export function CoverImage({ uri, rounded = true, children, accessibilityLabel }
           accessibilityLabel={accessibilityLabel}
           onLoad={(e) => {
             const { width, height } = e.source;
-            if (width && height) setRatio(clamp(width / height));
+            if (!aspect && width && height) setNatural(clamp(width / height));
           }}
         />
       ) : (

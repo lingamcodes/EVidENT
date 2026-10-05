@@ -47,15 +47,19 @@ export default function EventScreen() {
   const edit = () => router.push({ pathname: '/events/[id]/edit', params: { id } });
   const openAnswers = () => router.push(rsvpHref(id));
 
-  /** Guest RSVP. Saying yes to an event with questions continues to the host's questionnaire. */
+  /** Guest RSVP. "I'm going" on an event with questions opens the questionnaire instead. */
   const respond = async (status: RsvpStatus | null) => {
     const wasGoing = social?.my_status === 'yes';
+    // With a questionnaire you're only going once the answers are submitted.
+    if (status === 'yes' && !wasGoing && social?.has_questions) {
+      openAnswers();
+      return;
+    }
     setReplying(true);
     try {
       const result = await setRsvp(id, status);
       setSocial(await loadEventSocial(id));
       if (result.waitlisted && !wasGoing) showNotice(`The event is full — you're #${result.waitlist_rank} on the waitlist.`);
-      if (status === 'yes' && !wasGoing && social?.has_questions) openAnswers();
     } catch (e) {
       showNotice(e instanceof Error ? e.message : 'Could not save your RSVP.');
     } finally {

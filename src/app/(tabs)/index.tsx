@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import {
   ActivityRow,
@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   EventCard,
+  EventCarousel,
   Icon,
   IconButton,
   Input,
@@ -62,15 +63,16 @@ export default function HomeScreen() {
   const openEvent = (id: string) => router.push({ pathname: '/events/[id]', params: { id } });
 
   const reply = async (invite: MyInvite, status: RsvpStatus | null) => {
+    // With a questionnaire, Accept only opens the questions: you're going once you submit them.
+    if (status === 'yes' && invite.has_questions) {
+      router.push(rsvpHref(invite.event_id));
+      return;
+    }
     setBusyInvite(invite.event_id);
     try {
       const result = await setRsvp(invite.event_id, status);
       setInvites((list) => list?.map((i) => (i.event_id === invite.event_id ? { ...i, my_status: result.status } : i)) ?? null);
       if (result.waitlisted) showNotice(`The event is full — you're #${result.waitlist_rank} on the waitlist.`);
-      // Accepting an event with a questionnaire continues to the host's questions.
-      if (status === 'yes' && invite.has_questions) {
-        router.push(rsvpHref(invite.event_id));
-      }
       loadMyGoing().then(setGoing).catch(() => {});
     } catch (e) {
       showNotice(e instanceof Error ? e.message : 'Could not save your reply.');
@@ -114,7 +116,7 @@ export default function HomeScreen() {
           </Card>
         )}
         {!!going?.length && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, alignItems: 'flex-start' }}>
+          <EventCarousel>
             {going.map((e) => (
               <EventCard
                 key={e.event_id}
@@ -125,7 +127,7 @@ export default function HomeScreen() {
                 onPress={() => openEvent(e.event_id)}
               />
             ))}
-          </ScrollView>
+          </EventCarousel>
         )}
       </View>
 
@@ -139,7 +141,7 @@ export default function HomeScreen() {
           </Card>
         )}
         {!!hosting?.length && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, alignItems: 'flex-start' }}>
+          <EventCarousel>
             {hosting.map((e) => (
               <EventCard
                 key={e.id}
@@ -159,7 +161,7 @@ export default function HomeScreen() {
                 onPress={() => openEvent(e.id)}
               />
             ))}
-          </ScrollView>
+          </EventCarousel>
         )}
       </View>
 

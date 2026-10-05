@@ -131,6 +131,25 @@ begin
   insert into public.event_invites (event_id, invitee_id, invited_by) values
     (e_kopi, dev, kopi), (e_supper, dev, rachel), (e_supper, mei, rachel);
 
+  -- Guests going to events with questionnaires have answered them (required to RSVP).
+  insert into public.rsvp_answers (rsvp_id, question_id, option_id, text_answer)
+  select r.id, qq.id, o.id, null
+  from public.rsvps r
+  join public.event_questions qq on qq.event_id = r.event_id and qq.type = 'mc'
+  join public.event_question_options o on o.question_id = qq.id and o.label = 'Yes'
+  where r.event_id = e_5k and r.status = 'yes';
+  insert into public.rsvp_answers (rsvp_id, question_id, option_id, text_answer)
+  select r.id, qq.id, null, '6:30/km, getting faster'
+  from public.rsvps r
+  join public.event_questions qq on qq.event_id = r.event_id and qq.type = 'short'
+  where r.event_id = e_5k and r.status = 'yes';
+  insert into public.rsvp_answers (rsvp_id, question_id, option_id, text_answer)
+  select r.id, qq.id, o.id, null
+  from public.rsvps r
+  join public.event_questions qq on qq.event_id = r.event_id
+  join public.event_question_options o on o.question_id = qq.id and o.label = 'Nil'
+  where r.event_id = e_kopi and r.status = 'yes';
+
   -- ── Involving the real account (skipped if it doesn't exist) ──────────
   if me is not null then
     insert into public.follows (follower_id, target_id, created_at) values
