@@ -427,6 +427,7 @@ export type Database = {
           event_id: string
           id: string
           status: Database["public"]["Enums"]["rsvp_status"]
+          updated_at: string
           user_id: string
           waitlist_position: number | null
         }
@@ -435,6 +436,7 @@ export type Database = {
           event_id: string
           id?: string
           status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
           user_id: string
           waitlist_position?: number | null
         }
@@ -443,6 +445,7 @@ export type Database = {
           event_id?: string
           id?: string
           status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
           user_id?: string
           waitlist_position?: number | null
         }
@@ -517,7 +520,11 @@ export type Database = {
       can_view_event: { Args: { target_event_id: string }; Returns: boolean }
       check_account: { Args: { lookup_email: string }; Returns: Json }
       generate_invite_code: { Args: never; Returns: string }
+      get_event_social: { Args: { p_event_id: string }; Returns: Json }
+      get_home_feed: { Args: { p_limit?: number }; Returns: Json }
       get_invite_preview: { Args: { code: string }; Returns: Json }
+      get_my_going: { Args: never; Returns: Json }
+      get_my_invites: { Args: never; Returns: Json }
       get_my_profile: {
         Args: never
         Returns: {
@@ -545,6 +552,17 @@ export type Database = {
       save_event: {
         Args: { p_event: Json; p_questions?: Json }
         Returns: string
+      }
+      save_rsvp_answers: {
+        Args: { p_answers: Json; p_event_id: string }
+        Returns: undefined
+      }
+      set_rsvp: {
+        Args: {
+          p_event_id: string
+          p_status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Returns: Json
       }
     }
     Enums: {

@@ -43,3 +43,35 @@ export function formatEventWhen(startIso: string | null, endIso: string | null) 
   }
   return { date: formatLongDate(start), time: end ? `${formatTime(start)} – ${formatTime(end)}` : formatTime(start) };
 }
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/** Countdown badge on "You're going" cards: "in 40 min", "in 4 hrs", "in 3 days". */
+export function relativeUntil(iso: string | null) {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return 'Now';
+  if (ms < HOUR) return `in ${Math.max(1, Math.round(ms / MINUTE))} min`;
+  if (ms < DAY) {
+    const hrs = Math.round(ms / HOUR);
+    return `in ${hrs} hr${hrs === 1 ? '' : 's'}`;
+  }
+  const days = Math.round(ms / DAY);
+  return `in ${days} day${days === 1 ? '' : 's'}`;
+}
+
+/** Feed timestamps: "Just now", "12 min ago", "3 hrs ago", "Yesterday", "Mon 18 Aug". */
+export function timeAgo(iso: string) {
+  const then = new Date(iso);
+  const ms = Date.now() - then.getTime();
+  if (ms < MINUTE) return 'Just now';
+  if (ms < HOUR) return `${Math.round(ms / MINUTE)} min ago`;
+  if (ms < DAY) {
+    const hrs = Math.round(ms / HOUR);
+    return `${hrs} hr${hrs === 1 ? '' : 's'} ago`;
+  }
+  if (ms < 2 * DAY) return 'Yesterday';
+  return then.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' });
+}

@@ -2,7 +2,7 @@ import { Text as RNText, StyleSheet, type TextProps as RNTextProps } from 'react
 
 import { colors, typography, type TypographyVariant } from '@/theme/tokens';
 
-type Tone = 'default' | 'strong' | 'muted' | 'subtle' | 'accent' | 'success' | 'danger' | 'onAccent';
+type Tone = 'default' | 'strong' | 'muted' | 'subtle' | 'accent' | 'success' | 'danger' | 'onAccent' | 'onOverlay';
 
 type Props = Omit<RNTextProps, 'style'> & {
   variant?: TypographyVariant;
@@ -19,6 +19,7 @@ const toneColors: Record<Tone, string> = {
   success: colors.success,
   danger: colors.danger,
   onAccent: colors.textOnAccent,
+  onOverlay: colors.textOnOverlay,
 };
 
 const defaultTone: Partial<Record<TypographyVariant, Tone>> = {

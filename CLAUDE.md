@@ -97,7 +97,14 @@ event_invites              -- who can see/join a private event
 
 rsvps
   id, event_id (→events), user_id (→users),
-  status ('yes' | 'no' | 'maybe'), waitlist_position, created_at
+  status ('yes' | 'no' | 'maybe'), waitlist_position, created_at, updated_at
+  -- written ONLY via RPC set_rsvp(event, status|null): visibility, RSVP-by,
+  --   start time, capacity → waitlist (waitlist_position), auto-promotion.
+  --   Guests can't insert/update/delete directly; hosts may update/delete.
+  -- answers via save_rsvp_answers(event, answers) (checks question/option ids)
+  -- other people's RSVPs are never readable directly; counts/feeds come from
+  --   get_event_social, get_my_going, get_my_invites, get_home_feed
+  --   (feed "is going to" = PUBLIC events only until a privacy setting exists)
 
 media
   id, event_id (→events), uploader_id (→users),

@@ -226,6 +226,9 @@ export type MyEvent = {
   cover_image: string | null;
   status: string;
   visibility: string;
+  goingCount: number;
+  /** Invited (or joined by link) but no reply yet. */
+  pendingCount: number;
 };
 
 export async function loadMyEvents(userId: string): Promise<MyEvent[]> {
@@ -235,7 +238,21 @@ export async function loadMyEvents(userId: string): Promise<MyEvent[]> {
     .eq('host_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  if (!data.length) return [];
+
+  // As host you can read your events' RSVPs and invites directly.
+  const ids = data.map((e) => e.id);
+  const [{ data: rsvps }, { data: invites }] = await Promise.all([
+    supabase.from('rsvps').select('event_id, user_id, status, waitlist_position').in('event_id', ids),
+    supabase.from('event_invites').select('event_id, invitee_id').in('event_id', ids),
+  ]);
+  const replied = new Set((rsvps ?? []).map((r) => `${r.event_id}:${r.user_id}`));
+
+  return data.map((e) => ({
+    ...e,
+    goingCount: (rsvps ?? []).filter((r) => r.event_id === e.id && r.status === 'yes' && r.waitlist_position === null).length,
+    pendingCount: (invites ?? []).filter((i) => i.event_id === e.id && !replied.has(`${e.id}:${i.invitee_id}`)).length,
+  }));
 }
 
 /** People the user follows — who they can invite to private events. */
@@ -264,6 +281,8 @@ export type EventPage = {
   host: Person;
   isHost: boolean;
   going: Person[];
+  /** Said yes after the event filled up, in waitlist order. */
+  waitlist: Person[];
   maybe: Person[];
   notGoing: Person[];
   /** Invited (or joined by link) but no RSVP yet. */
@@ -281,13 +300,21 @@ export async function loadEventPage(id: string, viewerId: string): Promise<Event
       .select('*, host:users!events_host_id_fkey(id, name, username, avatar_url)')
       .eq('id', id)
       .single(),
-    supabase.from('rsvps').select('status, user:users!rsvps_user_id_fkey(id, name, username, avatar_url)').eq('event_id', id),
+    supabase
+      .from('rsvps')
+      .select('status, waitlist_position, user:users!rsvps_user_id_fkey(id, name, username, avatar_url)')
+      .eq('event_id', id),
     supabase.from('event_invites').select('invitee:users!event_invites_invitee_id_fkey(id, name, username, avatar_url)').eq('event_id', id),
   ]);
   if (error) throw error;
 
   const rsvps = (rsvpRows ?? []).filter((r): r is typeof r & { user: Person } => !!r.user);
-  const byStatus = (status: string) => rsvps.filter((r) => r.status === status).map((r) => r.user);
+  const byStatus = (status: string) =>
+    rsvps.filter((r) => r.status === status && r.waitlist_position === null).map((r) => r.user);
+  const waitlist = rsvps
+    .filter((r) => r.waitlist_position !== null)
+    .sort((a, b) => (a.waitlist_position ?? 0) - (b.waitlist_position ?? 0))
+    .map((r) => r.user);
   const replied = new Set(rsvps.map((r) => r.user.id));
   const pending = (inviteRows ?? [])
     .map((r) => r.invitee)
@@ -309,6 +336,7 @@ export async function loadEventPage(id: string, viewerId: string): Promise<Event
     host: event.host as Person,
     isHost: event.host_id === viewerId,
     going: byStatus('yes'),
+    waitlist,
     maybe: byStatus('maybe'),
     notGoing: byStatus('no'),
     pending,

@@ -2,28 +2,55 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { Avatar, Button, Card, EventCard, Input, Screen, SectionHeader, Text } from '@/components';
+import {
+  ActivityRow,
+  Bold,
+  Button,
+  Card,
+  EventCard,
+  Icon,
+  IconButton,
+  Input,
+  InviteCard,
+  Screen,
+  SectionHeader,
+  Tabs,
+  Text,
+} from '@/components';
 import { useAuth } from '@/lib/auth';
 import { loadMyEvents, parseInviteCode, type MyEvent } from '@/lib/events';
-import { formatWhen } from '@/lib/format';
+import { loadFeed, verbText, type FeedItem } from '@/lib/feed';
+import { formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
+import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
 import { spacing } from '@/theme/tokens';
 
-/** Placeholder Home until the feed (design 6b) is built: your events + join by invite code. */
+type FeedTab = 'friends' | 'invites';
+
+/** Home (design 6b): going + hosting carousels, then Friends / Invites. */
 export default function HomeScreen() {
-  const { session, profile, pendingInvite, clearPendingInvite } = useAuth();
+  const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
   const userId = session?.user.id;
   const firstName = profile?.name.split(' ')[0] || 'there';
 
-  const [events, setEvents] = useState<MyEvent[] | null>(null);
+  const [going, setGoing] = useState<GoingEvent[] | null>(null);
+  const [hosting, setHosting] = useState<MyEvent[] | null>(null);
+  const [feed, setFeed] = useState<FeedItem[] | null>(null);
+  const [invites, setInvites] = useState<MyInvite[] | null>(null);
+  const [tab, setTab] = useState<FeedTab>('friends');
+  const [busyInvite, setBusyInvite] = useState<string | null>(null);
   const [inviteInput, setInviteInput] = useState('');
   const [inviteError, setInviteError] = useState<string>();
 
-  // Reload whenever Home comes back into view (e.g. after creating or editing an event).
-  useFocusEffect(
-    useCallback(() => {
-      if (userId) loadMyEvents(userId).then(setEvents).catch(() => setEvents([]));
-    }, [userId]),
-  );
+  const reload = useCallback(() => {
+    if (!userId) return;
+    loadMyGoing().then(setGoing).catch(() => setGoing([]));
+    loadMyEvents(userId).then(setHosting).catch(() => setHosting([]));
+    loadFeed().then(setFeed).catch(() => setFeed([]));
+    loadMyInvites().then(setInvites).catch(() => setInvites([]));
+  }, [userId]);
+
+  // Reload whenever Home comes back into view (after RSVPing, editing, …).
+  useFocusEffect(reload);
 
   // An invite link opened before signing in: continue to it now.
   useEffect(() => {
@@ -31,6 +58,26 @@ export default function HomeScreen() {
     clearPendingInvite();
     router.push({ pathname: '/invite/[code]', params: { code: pendingInvite } });
   }, [pendingInvite, clearPendingInvite]);
+
+  const openEvent = (id: string) => router.push({ pathname: '/events/[id]', params: { id } });
+
+  const reply = async (invite: MyInvite, status: RsvpStatus | null) => {
+    setBusyInvite(invite.event_id);
+    try {
+      const result = await setRsvp(invite.event_id, status);
+      setInvites((list) => list?.map((i) => (i.event_id === invite.event_id ? { ...i, my_status: result.status } : i)) ?? null);
+      if (result.waitlisted) showNotice(`The event is full — you're #${result.waitlist_rank} on the waitlist.`);
+      // Accepting an event with a questionnaire continues to the host's questions.
+      if (status === 'yes' && invite.has_questions) {
+        router.push(rsvpHref(invite.event_id));
+      }
+      loadMyGoing().then(setGoing).catch(() => {});
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : 'Could not save your reply.');
+    } finally {
+      setBusyInvite(null);
+    }
+  };
 
   const openInvite = () => {
     const code = parseInviteCode(inviteInput);
@@ -40,45 +87,144 @@ export default function HomeScreen() {
     router.push({ pathname: '/invite/[code]', params: { code } });
   };
 
+  const pendingInvites = invites?.filter((i) => i.my_status === null).length ?? 0;
+
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-        <Avatar name={profile?.name ?? '?'} uri={profile?.avatar_url} size="lg" />
-        <View style={{ flex: 1, gap: spacing.xxs }}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ gap: spacing.xxs }}>
+          <Text variant="eyebrow">{formatLongDate(new Date())}</Text>
           <Text variant="title">Hey {firstName}</Text>
-          {profile?.username && <Text variant="small" tone="muted">@{profile.username}</Text>}
         </View>
+        <IconButton
+          icon={<Icon name={{ ios: 'bell', android: 'notifications' }} />}
+          onPress={() => router.push('/notifications')}
+          accessibilityLabel="Notifications"
+        />
       </View>
 
+      {/* You're going */}
       <View style={{ gap: spacing.sm }}>
-        <SectionHeader title="Your events" />
-        {events === null && <Text variant="small" tone="muted">Loading…</Text>}
-        {events?.length === 0 && (
+        <SectionHeader title="You're going" />
+        {going === null && <Text variant="small" tone="muted">Loading…</Text>}
+        {going?.length === 0 && (
           <Card>
-            <Text variant="body" tone="strong">No events yet. Tap the + below to host one.</Text>
+            <Text variant="body" tone="strong">Nothing lined up yet. Accept an invite below, or find something in Explore.</Text>
           </Card>
         )}
-        {!!events?.length && (
+        {!!going?.length && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, alignItems: 'flex-start' }}>
-            {events.map((e) => (
+            {going.map((e) => (
               <EventCard
-                key={e.id}
+                key={e.event_id}
                 title={e.title}
-                meta={[formatWhen(e.date_time), e.location].filter(Boolean).join(' · ')}
+                meta={[formatWhen(e.date_time), e.location, `${e.going_count} going`].filter(Boolean).join(' · ')}
                 imageUrl={e.cover_image}
-                badge={e.status === 'published' && e.visibility === 'private' ? 'Private' : undefined}
-                dimmed={e.status === 'draft'}
-                actionLabel="Manage"
-                onAction={() => router.push({ pathname: '/events/[id]/edit', params: { id: e.id } })}
-                onPress={() => router.push({ pathname: '/events/[id]', params: { id: e.id } })}
+                badge={e.waitlisted ? 'Waitlist' : relativeUntil(e.date_time) ?? undefined}
+                onPress={() => openEvent(e.event_id)}
               />
             ))}
           </ScrollView>
         )}
       </View>
 
+      {/* Your events */}
       <View style={{ gap: spacing.sm }}>
-        <SectionHeader title="Got an invite?" />
+        <SectionHeader title="Your events" />
+        {hosting === null && <Text variant="small" tone="muted">Loading…</Text>}
+        {hosting?.length === 0 && (
+          <Card>
+            <Text variant="body" tone="strong">No events yet. Tap the + below to host one.</Text>
+          </Card>
+        )}
+        {!!hosting?.length && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md, alignItems: 'flex-start' }}>
+            {hosting.map((e) => (
+              <EventCard
+                key={e.id}
+                title={e.title}
+                meta={
+                  e.status === 'draft'
+                    ? [formatWhen(e.date_time), 'Draft'].join(' · ')
+                    : [formatWhen(e.date_time), `${e.goingCount} going`, e.pendingCount ? `${e.pendingCount} pending` : null]
+                        .filter(Boolean)
+                        .join(' · ')
+                }
+                imageUrl={e.cover_image}
+                badge={e.status === 'published' && e.visibility === 'private' ? 'Private' : undefined}
+                dimmed={e.status === 'draft'}
+                actionLabel="Manage"
+                onAction={() => router.push({ pathname: '/events/[id]/edit', params: { id: e.id } })}
+                onPress={() => openEvent(e.id)}
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      {/* Friends | Invites */}
+      <View style={{ gap: spacing.md }}>
+        <Tabs
+          tabs={[
+            { key: 'friends', label: 'Friends' },
+            { key: 'invites', label: pendingInvites ? `Invites · ${pendingInvites}` : 'Invites' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+
+        {tab === 'friends' && (
+          <View style={{ gap: spacing.md }}>
+            {feed === null && <Text variant="small" tone="muted">Loading…</Text>}
+            {feed?.length === 0 && (
+              <Text variant="body" tone="muted">
+                When people you follow host or join public events, it shows up here.
+              </Text>
+            )}
+            {feed?.map((item) => (
+              <ActivityRow
+                key={`${item.verb}-${item.actor_id}-${item.event_id ?? item.target_user_id}-${item.at}`}
+                time={timeAgo(item.at)}
+                thumbUrl={item.thumb}
+                thumbShape={item.verb === 'followed' ? 'circle' : 'rounded'}
+                onPress={item.event_id ? () => openEvent(item.event_id!) : undefined}
+              >
+                <Bold>{item.actor_name}</Bold> {verbText[item.verb]} <Bold>{item.target}</Bold>
+              </ActivityRow>
+            ))}
+          </View>
+        )}
+
+        {tab === 'invites' && (
+          <View style={{ gap: spacing.md }}>
+            {invites === null && <Text variant="small" tone="muted">Loading…</Text>}
+            {invites?.length === 0 && <Text variant="body" tone="muted">No invites right now.</Text>}
+            {invites?.map((i) => (
+              <InviteCard
+                key={i.event_id}
+                inviterName={i.inviter_name}
+                inviterAvatarUrl={i.inviter_avatar_url}
+                title={i.title}
+                coverUrl={i.cover_image}
+                friendsGoing={i.friends_going}
+                when={formatWhen(i.date_time)}
+                where={i.location}
+                status={i.my_status}
+                busy={busyInvite === i.event_id}
+                onAccept={() => reply(i, 'yes')}
+                onDecline={() => reply(i, 'no')}
+                onUndo={() => reply(i, null)}
+                onPress={() => openEvent(i.event_id)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Paste an invite link or code */}
+      <View style={{ gap: spacing.sm }}>
+        <SectionHeader title="Got an invite link?" />
         <Input
           value={inviteInput}
           onChangeText={setInviteInput}
