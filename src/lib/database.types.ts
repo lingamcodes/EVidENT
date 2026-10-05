@@ -518,6 +518,28 @@ export type Database = {
       check_account: { Args: { lookup_email: string }; Returns: Json }
       generate_invite_code: { Args: never; Returns: string }
       get_invite_preview: { Args: { code: string }; Returns: Json }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          has_password: boolean
+          id: string
+          name: string
+          onboarded_at: string | null
+          username: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "users"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_event_host: { Args: { target_event_id: string }; Returns: boolean }
       join_event_by_code: { Args: { code: string }; Returns: string }
       save_event: {

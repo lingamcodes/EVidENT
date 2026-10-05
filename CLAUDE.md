@@ -67,6 +67,12 @@ users
   id, email, name, avatar_url, account_type ('individual' | 'org'), created_at,
   username (unique, lowercase), bio (≤120), city, has_password, onboarded_at
   -- avatars in Storage bucket 'avatars' at <user_id>/avatar.jpg (512px JPEG)
+  -- column grants: others can read only id, name, username, avatar_url, bio, city,
+  --   account_type, created_at, onboarded_at. Own full row (email, has_password)
+  --   via RPC get_my_profile(). Users may update only name, username, avatar_url,
+  --   bio, city, account_type, has_password, onboarded_at; account_type and
+  --   onboarded_at are locked after onboarding (trigger guard_user_update).
+  --   New columns must be added to these grants explicitly.
 
 follows
   id, target_id (→users), follower_id (→users),

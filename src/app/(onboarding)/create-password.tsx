@@ -12,6 +12,7 @@ import { spacing } from '@/theme/tokens';
  */
 export default function CreatePasswordScreen() {
   const { session, profile, refreshProfile } = useAuth();
+  const email = session?.user.email ?? profile?.email ?? '';
   const userId = session?.user.id;
 
   const [name, setName] = useState(profile?.name ?? '');
@@ -49,7 +50,7 @@ export default function CreatePasswordScreen() {
 
       <View style={{ gap: spacing.md }}>
         <Input label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
-        <Input label="Email" value={profile?.email ?? ''} editable={false} hint="From your Google account" />
+        <Input label="Email" value={email} editable={false} hint="From your Google account" />
         <Input
           label="Password"
           value={password}

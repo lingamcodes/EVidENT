@@ -36,7 +36,30 @@ Merging to `main` applies migrations automatically; auth settings are manual.
 - [ ] Optional: custom domain (e.g. evident.sg) on Vercel
 
 ## Security settings
-- [ ] Supabase → Authentication → enable **leaked password protection** (flagged by Security Advisor)
+- [ ] Supabase → Authentication → enable **leaked password protection** (flagged by Security Advisor; may need a paid plan)
+- [ ] Supabase → Authentication → set **minimum password length to 8** (the app asks for 8; Supabase defaults to 6)
+- [ ] **Rate limiting** on `check_account`, `get_invite_preview`, `join_event_by_code` — or drop
+      `check_account`'s signed-out access so emails can't be tested in bulk
+- [ ] **"Reset invite link"** for hosts (new invite code) — forwarded links can't be revoked today
+- [ ] **Org verification**: anyone can pick "An organisation" — decide before orgs get any special visibility
+- [ ] Decide whether **who-follows-whom** should stay visible to every signed-in user
+- [ ] Accepted trade-off, re-confirm: private-event cover photos have public URLs (anyone with the exact link)
+
+## Store & legal requirements
+- [ ] **Report & block** for events, photos and profiles, plus a way to act on reports
+      (Apple 1.2 / Google UGC policy — apps with user content are rejected without it)
+- [ ] **Privacy policy** (both stores require a URL) and **PDPA** compliance — questionnaire
+      answers can hold health data (allergies), which is sensitive personal data
+- [ ] **Delete account** in the app (Settings) — Apple requirement
+
+## Workflow & operations
+- [ ] Merging to `main` deploys migrations to prod instantly with no review/tests — add a
+      review habit (read the migration in the PR) and consider CI (`tsc`, `supabase db lint`)
+- [ ] **Upgrade prod to Supabase Pro** before real users: free projects pause after ~1 week
+      idle and have no restorable backups
+- [ ] Event times: app uses the phone's time zone, web invite page uses Singapore time — pick one rule
+- [ ] Deleted events leave cover photos in storage — add cleanup
+- [ ] Testing moves off Expo Go to a development build (no more LAN-IP Site URL changes)
 
 ## Device testing
 - [ ] Run through every screen on an **Android** phone as well as iPhone
