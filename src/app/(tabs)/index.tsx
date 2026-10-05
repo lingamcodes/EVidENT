@@ -39,6 +39,8 @@ export default function HomeScreen() {
   const [invites, setInvites] = useState<MyInvite[] | null>(null);
   const [tab, setTab] = useState<FeedTab>('friends');
   const [busyInvite, setBusyInvite] = useState<string | null>(null);
+  // Invites answered on this visit stay visible (for Undo) until Home reloads.
+  const [justAnswered, setJustAnswered] = useState<Set<string>>(new Set());
   const [inviteInput, setInviteInput] = useState('');
   const [inviteError, setInviteError] = useState<string>();
 
@@ -48,6 +50,7 @@ export default function HomeScreen() {
     loadMyEvents(userId).then(setHosting).catch(() => setHosting([]));
     loadFeed().then(setFeed).catch(() => setFeed([]));
     loadMyInvites().then(setInvites).catch(() => setInvites([]));
+    setJustAnswered(new Set());
   }, [userId]);
 
   // Reload whenever Home comes back into view (after RSVPing, editing, …).
@@ -72,6 +75,7 @@ export default function HomeScreen() {
     try {
       const result = await setRsvp(invite.event_id, status);
       setInvites((list) => list?.map((i) => (i.event_id === invite.event_id ? { ...i, my_status: result.status } : i)) ?? null);
+      setJustAnswered((set) => new Set(set).add(invite.event_id));
       if (result.waitlisted) showNotice(`The event is full — you're #${result.waitlist_rank} on the waitlist.`);
       loadMyGoing().then(setGoing).catch(() => {});
     } catch (e) {
@@ -89,6 +93,8 @@ export default function HomeScreen() {
     router.push({ pathname: '/invite/[code]', params: { code } });
   };
 
+  // Only invites you haven't replied to (accepted ones live under "You're going").
+  const shownInvites = invites?.filter((i) => i.my_status === null || justAnswered.has(i.event_id)) ?? null;
   const pendingInvites = invites?.filter((i) => i.my_status === null).length ?? 0;
 
   return (
@@ -200,9 +206,9 @@ export default function HomeScreen() {
 
         {tab === 'invites' && (
           <View style={{ gap: spacing.md }}>
-            {invites === null && <Text variant="small" tone="muted">Loading…</Text>}
-            {invites?.length === 0 && <Text variant="body" tone="muted">No invites right now.</Text>}
-            {invites?.map((i) => (
+            {shownInvites === null && <Text variant="small" tone="muted">Loading…</Text>}
+            {shownInvites?.length === 0 && <Text variant="body" tone="muted">No invites waiting for a reply.</Text>}
+            {shownInvites?.map((i) => (
               <InviteCard
                 key={i.event_id}
                 inviterName={i.inviter_name}
