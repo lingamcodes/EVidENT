@@ -3,5 +3,5 @@
   "buildCommand": "node build.js",
   "outputDirectory": "public",
   "cleanUrls": true,
-  "rewrites": [{ "source": "/invite/:code", "destination": "/invite.html" }]
+  "rewrites": [{ "source": "/invite/:code", "destination": "/invite" }]
 }

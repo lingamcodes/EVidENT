@@ -5,8 +5,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_ANON_KEY;
+// Trim: values pasted into Vercel easily pick up stray spaces/tabs/newlines.
+const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+const key = (process.env.SUPABASE_ANON_KEY || '').trim();
 if (!url || !key) {
   console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variable.');
   process.exit(1);
