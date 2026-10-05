@@ -1,34 +1,30 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { router } from 'expo-router';
+import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 
-import { colors } from '@/theme/tokens';
+import { CreateButton, TabBar, TabBarItem } from './TabBar';
 
+/** Bottom navigation from the design: Home · Explore · (+) · Planner · You. */
 export default function AppTabs() {
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.surface}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      {/* DEV ONLY — remove with src/app/components.tsx before shipping. */}
-      <NativeTabs.Trigger name="components">
-        <NativeTabs.Trigger.Label>Components</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="square.grid.2x2" md="widgets" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs>
+      <TabSlot />
+      <TabList asChild>
+        <TabBar>
+          <TabTrigger name="index" href="/" asChild>
+            <TabBarItem label="Home" icon={{ ios: 'house.fill', android: 'home' }} />
+          </TabTrigger>
+          <TabTrigger name="explore" href="/explore" asChild>
+            <TabBarItem label="Explore" icon={{ ios: 'magnifyingglass', android: 'search' }} />
+          </TabTrigger>
+          <CreateButton onPress={() => router.push('/events/new')} />
+          <TabTrigger name="planner" href="/planner" asChild>
+            <TabBarItem label="Planner" icon={{ ios: 'calendar', android: 'calendar_month' }} />
+          </TabTrigger>
+          <TabTrigger name="you" href="/you" asChild>
+            <TabBarItem label="You" icon={{ ios: 'person.crop.circle', android: 'account_circle' }} />
+          </TabTrigger>
+        </TabBar>
+      </TabList>
+    </Tabs>
   );
 }

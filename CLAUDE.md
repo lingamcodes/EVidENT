@@ -64,7 +64,9 @@ copy or onboarding with it.
 
 ```
 users
-  id, email, name, avatar_url, account_type ('individual' | 'org'), created_at
+  id, email, name, avatar_url, account_type ('individual' | 'org'), created_at,
+  username (unique, lowercase), bio (≤120), city, has_password, onboarded_at
+  -- avatars in Storage bucket 'avatars' at <user_id>/avatar.jpg (512px JPEG)
 
 follows
   id, target_id (→users), follower_id (→users),
@@ -74,8 +76,18 @@ follows
 events
   id, host_id (→users), title, description, date_time, location,
   cover_image, capacity, visibility ('public' | 'followers' | 'private'),
-  paynow_amount, paynow_reference, external_chat_link, created_at
+  paynow_amount, paynow_reference, external_chat_link, created_at,
+  ends_at, rsvp_by, map_link, status ('draft' | 'published'),
+  allow_guest_invites, invite_code (unique), updated_at
   -- MVP uses 'public' and 'private' only; 'followers' reserved for v2
+  -- description = "Additional notes"; capacity null = unlimited
+  -- saved via RPC save_event(p_event, p_questions) in one transaction
+  -- cover photos: Storage bucket 'event-covers' at <user_id>/<ts>.jpg (1600px JPEG)
+
+event_invites              -- who can see/join a private event
+  id, event_id (→events), invitee_id (→users), invited_by (→users), created_at
+  -- invite links: join_event_by_code(code); public preview: get_invite_preview(code)
+  --   (title, host, when, where, cover — never guests or media)
 
 rsvps
   id, event_id (→events), user_id (→users),
@@ -162,3 +174,8 @@ row rather than creating a duplicate. Same identity, multiple auth methods.
 - Screens compose components from src/components/. Screens may only apply layout styles (flex, margin, gap, width). Never colour, typography, border, or radius.
 - Visual variations are component props (variant, size), not style overrides.
 - Before creating a new component, check src/components/ for an existing one to extend.
+- Keyboard must never cover what the user is typing. Every screen is wrapped in
+  `<Screen>`, which scrolls a focused field above the iOS keyboard (Android
+  resizes natively). Text fields use `<Input>`, which hooks into this; any new
+  text-entry component must call `useRevealAboveKeyboard()` on focus the same way.
+  (react-native-keyboard-controller would be nicer but isn't in Expo Go.)
