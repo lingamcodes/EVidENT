@@ -53,7 +53,9 @@
     "lint": "expo lint",
     "db:link-dev": "supabase link --project-ref",
     "db:push-dev": "supabase db push --linked",
-    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts",
+    "db:seed-dev": "supabase db query --linked -f scripts/dev-seed/seed.sql",
+    "db:unseed-dev": "supabase db query --linked -f scripts/dev-seed/unseed.sql"
   },
   "private": true
 }

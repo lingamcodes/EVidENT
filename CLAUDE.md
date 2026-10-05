@@ -151,6 +151,10 @@ One-time CLI setup: `npx supabase login`, then
   (`.env.local`, see `.env.example`); the service_role key never ships.
 - After each migration is applied to dev, regenerate types with `npm run db:types`.
 - Supabase client: `src/lib/supabase.ts`.
+- Test data (dev only): `npm run db:seed-dev` creates 7 fake accounts
+  (`<username>@example.com` / `TestPass123!`) with events, RSVPs, follows and
+  invites to the real account; `npm run db:unseed-dev` removes them all.
+  Scripts in `scripts/dev-seed/`. Never run against prod.
 
 ## Styling conventions
 
