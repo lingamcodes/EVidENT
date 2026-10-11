@@ -75,26 +75,26 @@ begin
     (e_5k, sundown, 'Golden hour 5k + laksa',
      'Bring a water bottle. We start easy and regroup at the 2k mark, so come even if you haven''t run in months. Laksa after is optional but strongly encouraged.',
      date_trunc('day', now()) + interval '2 days 18 hours 45 minutes', date_trunc('day', now()) + interval '2 days 21 hours 30 minutes',
-     'East Coast Park Carpark C4', null, 'https://picsum.photos/seed/evident-5k/1200/800', null, 'public', 'published', now() - interval '3 hours'),
+     'East Coast Park Carpark C4', null, 'https://picsum.photos/seed/evident-5k/1000/1000', null, 'public', 'published', now() - interval '3 hours'),
     (e_kallang, sundown, 'Kallang night loop', 'Small group, steady pace. Capped so nobody gets left behind.',
      date_trunc('day', now()) + interval '5 days 20 hours', null,
-     'Sports Hub', null, 'https://picsum.photos/seed/evident-kallang/1200/900', 2, 'public', 'published', now() - interval '1 day'),
+     'Sports Hub', null, 'https://picsum.photos/seed/evident-kallang/1000/1000', 2, 'public', 'published', now() - interval '1 day'),
     (e_kopi, kopi, 'Kopi + cards night', 'Kopi, cards and nothing else planned. Bring a deck if you have one.',
      date_trunc('day', now()) + interval '6 days 16 hours', null,
      'Tiong Bahru', null, 'https://picsum.photos/seed/evident-kopi/1000/1000', null, 'private', 'published', now() - interval '1 hour'),
     (e_concert, hall, 'Hall concert: autumn set', 'An hour of strings and brass, then snacks. Free entry.',
      date_trunc('day', now()) + interval '10 days 19 hours 30 minutes', date_trunc('day', now()) + interval '10 days 21 hours',
-     'UCC Theatre', null, 'https://picsum.photos/seed/evident-concert/1600/900', 120, 'public', 'published', now() - interval '2 days'),
+     'UCC Theatre', null, 'https://picsum.photos/seed/evident-concert/1000/1000', 120, 'public', 'published', now() - interval '2 days'),
     (e_supper, rachel, 'Supper run + prata', 'Easy 5k to Jalan Kayu, prata at the end. Midnight-ish.',
      date_trunc('day', now()) + interval '3 days 23 hours', null,
-     'Jalan Kayu', null, 'https://picsum.photos/seed/evident-supper/1200/800', null, 'private', 'published', now() - interval '5 hours'),
+     'Jalan Kayu', null, 'https://picsum.photos/seed/evident-supper/1000/1000', null, 'private', 'published', now() - interval '5 hours'),
     (e_hike, dev, 'Southern Ridges hike', 'Kent Ridge to HortPark. Wear proper shoes.',
      date_trunc('day', now()) + interval '8 days 7 hours 30 minutes', null,
-     'Kent Ridge Park', null, 'https://picsum.photos/seed/evident-hike/900/1200', null, 'public', 'published', now() - interval '6 hours'),
+     'Kent Ridge Park', null, 'https://picsum.photos/seed/evident-hike/1000/1000', null, 'public', 'published', now() - interval '6 hours'),
     (e_draft, arjun, 'Board games at mine', null, null, null, null, null, null, null, 'public', 'draft', now() - interval '1 day'),
     (e_past, mei, 'Bishan track night', '400m repeats, then bubble tea.',
      date_trunc('day', now()) - interval '7 days' + interval '19 hours', null,
-     'Bishan Stadium', null, 'https://picsum.photos/seed/evident-track/1200/800', null, 'public', 'published', now() - interval '9 days');
+     'Bishan Stadium', null, 'https://picsum.photos/seed/evident-track/1000/1000', null, 'public', 'published', now() - interval '9 days');
 
   -- Questionnaires
   insert into public.event_questions (event_id, position, text, type) values (e_5k, 0, 'Staying for laksa?', 'mc') returning id into q;
