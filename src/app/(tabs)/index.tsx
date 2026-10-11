@@ -188,7 +188,7 @@ export default function HomeScreen() {
         />
 
         {/* Bounded box with its own scroll, so a long feed doesn't push the page down. */}
-        <ScrollPanel>
+        <ScrollPanel height="fill">
           {tab === 'friends' && (
             <View style={{ gap: spacing.md }}>
               {feed === null && <Text variant="small" tone="muted">Loading…</Text>}

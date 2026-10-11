@@ -1,10 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 
 type Props = {
   children: ReactNode;
+  /**
+   * 'half' = half the screen. 'fill' = everything below a Tabs row down to the
+   * bottom tab bar, once that row is scrolled to the top of the screen.
+   */
+  height?: 'half' | 'fill';
 };
 
 /**
@@ -14,9 +20,14 @@ type Props = {
  * only appears while scrolling) that shows how far down you are. Height is a share
  * of the screen so it fits any phone; nested scrolling works on Android too.
  */
-export function ScrollPanel({ children }: Props) {
+export function ScrollPanel({ children, height = 'half' }: Props) {
   const { height: screenHeight } = useWindowDimensions();
-  const panelHeight = Math.round(screenHeight * sizes.scrollPanelScreenShare);
+  const insets = useSafeAreaInsets();
+  const panelHeight = Math.round(
+    height === 'fill'
+      ? screenHeight - insets.top - insets.bottom - sizes.tabBarContentHeight - sizes.tabsRowHeight - spacing.md
+      : screenHeight * sizes.scrollPanelScreenShare,
+  );
   const [contentHeight, setContentHeight] = useState(0);
   const [offset, setOffset] = useState(0);
 

@@ -155,8 +155,14 @@ export const sizes = {
   badgeDot: 8,
   avatar: { xs: 30, sm: 32, md: 48, lg: 60, xl: 96, xxl: 132 },
   eventCard: { width: 220, imageHeight: 172 },
-  /** Home's Friends / Invites box: this share of the screen height, scrolling inside. */
+  /** ScrollPanel 'half' height: this share of the screen height. */
   scrollPanelScreenShare: 0.5,
+  /**
+   * Heights used by ScrollPanel 'fill' to fill the screen below a Tabs row:
+   * the bottom tab bar (without the home-indicator inset) and the Tabs row itself.
+   */
+  tabBarContentHeight: 56,
+  tabsRowHeight: 40,
   /** Always-visible scroll bar beside a ScrollPanel: track width, shortest handle. */
   scrollTrack: 4,
   scrollThumbMin: 24,
