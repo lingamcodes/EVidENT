@@ -9,6 +9,7 @@ import {
   Card,
   EventCard,
   EventCarousel,
+  useEventCardWidth,
   Icon,
   IconButton,
   Input,
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
   const userId = session?.user.id;
   const firstName = profile?.name.split(' ')[0] || 'there';
+  const cardWidth = useEventCardWidth();
 
   const [going, setGoing] = useState<GoingEvent[] | null>(null);
   const [hosting, setHosting] = useState<MyEvent[] | null>(null);
@@ -125,6 +127,7 @@ export default function HomeScreen() {
           <EventCarousel>
             {going.map((e) => (
               <EventCard
+                width={cardWidth}
                 key={e.event_id}
                 title={e.title}
                 meta={[formatWhen(e.date_time), e.location, `${e.going_count} going`].filter(Boolean).join(' · ')}
@@ -150,6 +153,7 @@ export default function HomeScreen() {
           <EventCarousel>
             {hosting.map((e) => (
               <EventCard
+                width={cardWidth}
                 key={e.id}
                 title={e.title}
                 meta={

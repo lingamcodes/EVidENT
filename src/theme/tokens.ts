@@ -146,6 +146,10 @@ export const sizes = {
   coverAspect: { fallback: 3 / 2, min: 4 / 5, max: 2 },
   /** Every event card (carousels, invites) uses this one shape so they line up. */
   cardCoverAspect: 3 / 2,
+  /** How much of the next carousel card peeks in at the edge (hints you can swipe). */
+  carouselPeek: 44,
+  /** Blur on the backdrop copy behind a fitted (uncropped) photo. */
+  coverBackdropBlur: 24,
   dialogListMax: 238,
   guestListMax: 430,
   paxInput: 84,

@@ -31,6 +31,7 @@ import {
   Tabs,
   Tag,
   Text,
+  useEventCardWidth,
   type Question,
   type QuestionType,
 } from '@/components';
@@ -53,6 +54,7 @@ export default function ComponentGallery() {
   const [questionType, setQuestionType] = useState<QuestionType>('mc');
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [photoOn, setPhotoOn] = useState(false);
+  const cardWidth = useEventCardWidth();
 
   return (
     <Screen>
@@ -228,8 +230,8 @@ export default function ComponentGallery() {
       <Section title="Cards">
         <SectionHeader title="You're going" actionLabel="See all" onAction={noop} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
-          <EventCard title="Golden hour 5k + laksa" meta="Today · 6.45pm · East Coast Park · 43 going" badge="in 4 hrs" onPress={noop} />
-          <EventCard title="Kopi + cards night" meta="Sun 24 Aug · 9 going · 4 pending" actionLabel="Manage" onAction={noop} onPress={noop} />
+          <EventCard width={cardWidth} title="Golden hour 5k + laksa" meta="Today · 6.45pm · East Coast Park · 43 going" badge="in 4 hrs" onPress={noop} />
+          <EventCard width={cardWidth} title="Kopi + cards night" meta="Sun 24 Aug · 9 going · 4 pending" actionLabel="Manage" onAction={noop} onPress={noop} />
         </ScrollView>
         <ActivityRow time="12 min ago" onPress={noop}>
           <Bold>Rachel Tan</Bold> is going to <Bold>Golden hour 5k + laksa</Bold>

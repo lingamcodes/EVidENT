@@ -13,22 +13,30 @@ type Props = {
   actionLabel?: string;
   onAction?: () => void;
   onPress: () => void;
-  /** Greys out the photo and text (e.g. drafts); the action stays fully visible. */
+  /** Greys out the card (e.g. drafts); the action stays fully visible. */
   dimmed?: boolean;
+  /** Card width — carousels pass useEventCardWidth() so every card matches. */
+  width: number;
 };
 
-/** Photo-topped event card used in the "You're going" / "Your events" carousels. */
-export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false }: Props) {
+/**
+ * Carousel event card, styled like the invite cards: the whole photo (fitted over a
+ * blurred copy of itself) with the title and details on a band across the bottom.
+ */
+export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false, width }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${meta}`}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, { width }, pressed && styles.pressed]}
     >
-      {/* Standard card shape so carousels line up; the photo fills it without stretching. */}
-      <CoverImage uri={imageUrl ?? null} rounded={false} aspect={sizes.cardCoverAspect}>
+      <CoverImage uri={imageUrl ?? null} rounded={false} aspect={sizes.cardCoverAspect} fit="contain">
         {dimmed && <View style={styles.dimPhoto} />}
+        <View style={[styles.band, dimmed && styles.dimmed]}>
+          <Text variant="heading" tone="onOverlay" numberOfLines={1}>{title}</Text>
+          <Text variant="small" tone="onOverlay" numberOfLines={1}>{meta}</Text>
+        </View>
         {badge && (
           <View style={styles.badge}>
             <Tag label={badge} variant="overlay" />
@@ -40,27 +48,31 @@ export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction,
           </Pressable>
         )}
       </CoverImage>
-      <View style={[styles.body, dimmed && styles.dimText]}>
-        <Text variant="cardTitle" numberOfLines={1}>{title}</Text>
-        <Text variant="meta" numberOfLines={1}>{meta}</Text>
-      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: sizes.eventCard.width,
     borderRadius: radii.lg,
     overflow: 'hidden',
     backgroundColor: colors.surface,
     borderWidth: borders.hairline,
     borderColor: colors.border,
   },
-  pressed: { backgroundColor: colors.surfaceSunken },
+  pressed: { opacity: opacity.dimmed },
+  band: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: spacing.xxs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md + 2,
+    backgroundColor: colors.overlay,
+  },
+  dimmed: { opacity: opacity.dimmed },
   dimPhoto: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.surface, opacity: opacity.dimmed },
-  dimText: { opacity: opacity.dimmed },
   badge: { position: 'absolute', top: spacing.sm + 1, left: spacing.sm + 1 },
   action: { position: 'absolute', top: spacing.sm + 1, right: spacing.sm + 1 },
-  body: { gap: spacing.xxs, paddingTop: spacing.sm, paddingBottom: spacing.md - 2, paddingHorizontal: spacing.md },
 });
