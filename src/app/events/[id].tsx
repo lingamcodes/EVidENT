@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Linking, ScrollView, Share, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
 
 import {
   ActionTile,
@@ -75,6 +75,8 @@ export default function EventScreen() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const edit = () => router.push({ pathname: '/events/[id]/edit', params: { id } });
   const openAnswers = () => router.push(rsvpHref(id));
+  // TODO(profiles 3b/3c): open the host's profile page once it exists (docs/backlog.md).
+  const openHostProfile = () => showNotice('Profiles are coming soon.');
 
   /** Guest RSVP. "I'm going" on an event with questions opens the questionnaire instead. */
   const respond = async (status: RsvpStatus | null) => {
@@ -190,10 +192,16 @@ export default function EventScreen() {
       <View style={{ alignItems: 'center', gap: spacing.sm }}>
         <Text variant="display" align="center">{page.title}</Text>
         {/* Who's running it, prominently — guests may invite people, but it's the host's event. */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <Pressable
+          onPress={openHostProfile}
+          accessibilityRole="link"
+          accessibilityLabel={`Hosted by ${page.host.name}. Open their profile`}
+          hitSlop={spacing.sm}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
+        >
           <Avatar name={page.host.name} uri={page.host.avatar_url} size="xs" />
           <Text variant="bodyStrong">By {page.host.name}</Text>
-        </View>
+        </Pressable>
       </View>
       {page.coverUrl && <CoverImage uri={page.coverUrl} accessibilityLabel="Event cover" />}
 

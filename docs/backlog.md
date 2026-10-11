@@ -20,7 +20,8 @@ live in `pre-launch-checklist.md` instead.
 
 ## With profiles (3b org / 3c personal)
 - [ ] "followed" feed items link to the person's / org's profile
-- [ ] Host name on event pages links to their profile
+- [ ] Host name on event pages links to their profile (already tappable — `openHostProfile`
+      in src/app/events/[id].tsx shows "coming soon"; point it at the profile route)
 - [ ] "See all" on Home's Your events
 - [ ] Settings screen: change password, sign out, delete account (store requirement),
       edit profile, individual ↔ org switch (locked after onboarding today)
