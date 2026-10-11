@@ -1,7 +1,6 @@
 import * as Linking from 'expo-linking';
 
 import type { Question, QuestionType } from '@/components/questionnaire/types';
-import { sizes } from '@/theme/tokens';
 import { combineDateAndTime } from './format';
 import { pickAndUploadImage } from './images';
 import { supabase } from './supabase';
@@ -399,12 +398,11 @@ export async function deleteEvent(id: string) {
   if (error) throw error;
 }
 
-/** Cover cropped to exactly 3:2, 1600 × 1067 JPEG at 75% (~200–400 KB). */
+/** Cover in whatever crop the host picks, up to 1600px wide JPEG at 75% (~200–400 KB). */
 export function pickAndUploadCover(userId: string) {
   return pickAndUploadImage({
     bucket: 'event-covers',
     path: `${userId}/${Date.now()}.jpg`,
-    aspect: sizes.coverRatio,
     width: 1600,
     quality: 0.75,
   });

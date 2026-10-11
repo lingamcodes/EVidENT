@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { borders, colors, radii, spacing } from '@/theme/tokens';
+import { borders, colors, radii, sizes, spacing } from '@/theme/tokens';
 import { Avatar } from './Avatar';
 import { Button } from './Button';
 import { CoverImage } from './CoverImage';
@@ -68,7 +68,7 @@ export function InviteCard({
     <View style={styles.card}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${inviterName} invites you to ${title}`}>
         {coverUrl ? (
-          <CoverImage uri={coverUrl} rounded={false}>
+          <CoverImage uri={coverUrl} rounded={false} aspect={sizes.cardCoverAspect}>
             <View style={styles.overlay}>{heading(true)}</View>
           </CoverImage>
         ) : (

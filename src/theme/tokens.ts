@@ -142,11 +142,12 @@ export const sizes = {
   textAreaMinHeight: 90,
   toggle: { width: 38, height: 22, inset: 2 },
   coverImage: 250,
-  /**
-   * Every event cover is 3:2 — cropped to it on upload and shown in a 3:2 box
-   * everywhere (cards, invites, event page, form, invite web page).
-   */
-  coverRatio: [3, 2] as [number, number],
+  /** Cover photos keep their own shape (width ÷ height), clamped to this range. */
+  coverAspect: { fallback: 3 / 2, min: 4 / 5, max: 2 },
+  /** Invite cards (full width) use this one shape so they line up. */
+  cardCoverAspect: 3 / 2,
+  /** Carousel event cards: tall (portrait) so more of the photo shows; all the same size. */
+  carouselCoverAspect: 4 / 5,
   dialogListMax: 238,
   guestListMax: 430,
   paxInput: 84,
