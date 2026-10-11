@@ -159,6 +159,11 @@ One-time CLI setup: `npx supabase login`, then
   (`<username>@example.com` / `TestPass123!`) with events, RSVPs, follows and
   invites to the real account; `npm run db:unseed-dev` removes them all.
   Scripts in `scripts/dev-seed/`. Never run against prod.
+- Regression test (dev only): `npm run test:dev` signs in as each fake account
+  and exercises privacy, private events/invites, questionnaire RSVPs,
+  capacity/waitlist, deadlines, editing, feed and storage through the real API
+  (~60 checks). Resets the fake data before and after; refuses to run unless
+  `.env.local` points at the linked dev project. Run it after any migration.
 
 ## Styling conventions
 

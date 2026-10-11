@@ -55,7 +55,8 @@
     "db:push-dev": "supabase db push --linked",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts",
     "db:seed-dev": "supabase db query --linked -f scripts/dev-seed/seed.sql",
-    "db:unseed-dev": "supabase db query --linked -f scripts/dev-seed/unseed.sql"
+    "db:unseed-dev": "supabase db query --linked -f scripts/dev-seed/unseed.sql",
+    "test:dev": "node --env-file=.env.local scripts/dev-seed/persona-tests.cjs"
   },
   "private": true
 }
