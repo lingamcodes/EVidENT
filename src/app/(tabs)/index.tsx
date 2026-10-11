@@ -177,8 +177,8 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Friends | Invites */}
-      <View style={{ gap: spacing.md }}>
+      {/* Friends | Invites — the section sits flush under the tabs. */}
+      <View>
         <Tabs
           tabs={[
             { key: 'friends', label: 'Friends' },
@@ -216,7 +216,7 @@ export default function HomeScreen() {
           <Text variant="body" tone="muted">No invites waiting for a reply.</Text>
         )}
         {tab === 'invites' && !!shownInvites?.length && (
-          <SlidePager height="fill">
+          <SlidePager height="content">
             {shownInvites.map((i) => (
               <InviteCard
                 key={i.event_id}

@@ -7,7 +7,8 @@ import { usePanelHeight } from './ScrollPanel';
 type Props = {
   /** One child per slide (e.g. one InviteCard each). */
   children: ReactNode;
-  height?: 'half' | 'fill';
+  /** 'content' = exactly as tall as the tallest slide's content (no empty space above it). */
+  height?: 'half' | 'fill' | 'content';
 };
 
 /**
@@ -16,9 +17,12 @@ type Props = {
  * you're on.
  */
 export function SlidePager({ children, height = 'fill' }: Props) {
-  const pageHeight = usePanelHeight(height);
+  const panelHeight = usePanelHeight(height === 'content' ? 'fill' : height);
   const slides = Children.toArray(children);
   const [index, setIndex] = useState(0);
+  // 'content': measure each slide's natural height and size every page to the tallest.
+  const [contentHeight, setContentHeight] = useState(0);
+  const pageHeight = height === 'content' && contentHeight ? contentHeight : panelHeight;
 
   return (
     <View style={[styles.row, { height: pageHeight }]}>
@@ -31,8 +35,14 @@ export function SlidePager({ children, height = 'fill' }: Props) {
         onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.y / pageHeight))}
       >
         {slides.map((slide, i) => (
-          <View key={i} style={[styles.slide, { height: pageHeight }]} accessibilityLabel={`${i + 1} of ${slides.length}`}>
-            {slide}
+          <View
+            key={i}
+            style={[styles.slide, height === 'content' && styles.slideTop, { height: pageHeight }]}
+            accessibilityLabel={`${i + 1} of ${slides.length}`}
+          >
+            <View onLayout={(e) => height === 'content' && setContentHeight((h) => Math.max(h, Math.ceil(e.nativeEvent.layout.height)))}>
+              {slide}
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -51,6 +61,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm },
   flex: { flex: 1 },
   slide: { justifyContent: 'center' },
+  slideTop: { justifyContent: 'flex-start' },
   dots: { justifyContent: 'center', gap: spacing.xs + 1 },
   dot: {
     width: sizes.scrollTrack + 2,
