@@ -1,5 +1,6 @@
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
@@ -7,34 +8,38 @@ type Options = {
   bucket: 'avatars' | 'event-covers';
   /** Path inside the bucket; must start with the user's id (storage policy). */
   path: string;
-  /**
-   * Fixed crop ratio (Android only — iOS's crop is always square). Leave out to
-   * keep whatever crop the user picks.
-   */
-  aspect?: [number, number];
-  /** Max output width in px; height follows the photo's own shape (never stretched). */
+  /** Required shape [width, height], e.g. [3, 2] for covers, [1, 1] for avatars. */
+  aspect: [number, number];
+  /** Max output width in px. */
   width: number;
   /** JPEG quality 0–1. */
   quality: number;
 };
 
 /**
- * Lets the user pick a photo, crops it, shrinks it to `width` px JPEG, uploads it
- * and returns its public URL. Returns null if the user cancels.
+ * Lets the user pick a photo, crops it to exactly `aspect`, shrinks it to `width` px
+ * JPEG, uploads it and returns its public URL. Returns null if the user cancels.
+ *
+ * Android's picker crops to any ratio, so the user frames it. iOS's built-in
+ * cropper is square-only, so for non-square shapes iOS skips it and the centre
+ * of the photo is cropped automatically. Either way the result is exactly `aspect`.
  */
 export async function pickAndUploadImage({ bucket, path, aspect, width, quality }: Options): Promise<string | null> {
+  const square = aspect[0] === aspect[1];
   const picked = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: 'images',
-    allowsEditing: true,
+    allowsEditing: Platform.OS === 'android' || square,
     aspect,
     quality: 1,
   });
   if (picked.canceled) return null;
 
   const asset = picked.assets[0];
-  // Width only, so the crop's shape is kept; never enlarge small photos.
+  const crop = centreCrop(asset.width, asset.height, aspect[0] / aspect[1]);
+  const outWidth = Math.min(width, crop.width);
   const rendered = await ImageManipulator.manipulate(asset.uri)
-    .resize({ width: Math.min(width, asset.width || width) })
+    .crop(crop)
+    .resize({ width: outWidth, height: Math.round(outWidth / (aspect[0] / aspect[1])) })
     .renderAsync();
   const image = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: quality });
 
@@ -45,4 +50,14 @@ export async function pickAndUploadImage({ bucket, path, aspect, width, quality 
   // Paths can be reused (avatars), so add a version to bust image caches.
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+/** Largest centred rectangle of the given ratio (width ÷ height) inside a w × h image. */
+function centreCrop(w: number, h: number, ratio: number) {
+  if (w / h > ratio) {
+    const cropW = Math.round(h * ratio);
+    return { originX: Math.round((w - cropW) / 2), originY: 0, width: cropW, height: h };
+  }
+  const cropH = Math.round(w / ratio);
+  return { originX: 0, originY: Math.round((h - cropH) / 2), width: w, height: cropH };
 }
