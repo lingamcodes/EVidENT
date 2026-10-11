@@ -4,6 +4,7 @@ import { Linking, ScrollView, Share, View } from 'react-native';
 
 import {
   ActionTile,
+  Avatar,
   AvatarStack,
   Button,
   Card,
@@ -186,7 +187,14 @@ export default function EventScreen() {
         </Card>
       )}
 
-      <Text variant="display" align="center">{page.title}</Text>
+      <View style={{ alignItems: 'center', gap: spacing.sm }}>
+        <Text variant="display" align="center">{page.title}</Text>
+        {/* Who's running it, prominently — guests may invite people, but it's the host's event. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Avatar name={page.host.name} uri={page.host.avatar_url} size="xs" />
+          <Text variant="bodyStrong">By {page.host.name}</Text>
+        </View>
+      </View>
       {page.coverUrl && <CoverImage uri={page.coverUrl} accessibilityLabel="Event cover" />}
 
       <Divider />
@@ -202,7 +210,6 @@ export default function EventScreen() {
       <View style={{ gap: spacing.xs }}>
         <Text variant="eyebrow">Where</Text>
         <Text variant="heading">{page.location || 'Place to be confirmed'}</Text>
-        <Text variant="body" tone="muted">Hosted by {page.host.name}</Text>
         {directions && (
           <View style={{ alignItems: 'flex-start', marginTop: spacing.sm }}>
             <Button label="Directions" variant="secondary" size="sm" onPress={() => Linking.openURL(directions)} />
