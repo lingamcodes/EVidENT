@@ -3,33 +3,30 @@ import { View } from 'react-native';
 
 import { Button, Input, Screen, Text } from '@/components';
 import { MIN_PASSWORD_LENGTH, setPassword, signOut, useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
 import { spacing } from '@/theme/tokens';
 
 /**
- * Google/Apple sign-ups land here first, laid out like the email sign-up page:
- * name, their email (locked), and a password, so they can also log in by email.
+ * Google/Apple sign-ins land here first: their email (locked) and a password, so they
+ * can also log in by email. No name field — it comes from Google, and onboarding
+ * step 1 lets them check it. (The email sign-up page still asks for a name.)
  */
 export default function CreatePasswordScreen() {
   const { session, profile, refreshProfile } = useAuth();
   const email = session?.user.email ?? profile?.email ?? '';
   const userId = session?.user.id;
 
-  const [name, setName] = useState(profile?.name ?? '');
   const [password, setPw] = useState('');
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
   const tooShort = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
-  const ready = name.trim().length > 0 && password.length >= MIN_PASSWORD_LENGTH;
+  const ready = password.length >= MIN_PASSWORD_LENGTH;
 
   const submit = async () => {
     if (!userId) return;
     setBusy(true);
     setError(undefined);
     try {
-      const { error: nameError } = await supabase.from('users').update({ name: name.trim() }).eq('id', userId);
-      if (nameError) throw nameError;
       await setPassword(userId, password);
       // has_password is now true, so onboarding moves on to step 1.
       await refreshProfile();
@@ -49,7 +46,6 @@ export default function CreatePasswordScreen() {
       </View>
 
       <View style={{ gap: spacing.md }}>
-        <Input label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
         <Input label="Email" value={email} editable={false} hint="From your Google account" />
         <Input
           label="Password"
