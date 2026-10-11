@@ -15,7 +15,6 @@ export { Dialog } from './Dialog';
 export { Divider } from './Divider';
 export { EventCard } from './EventCard';
 export { EventCarousel } from './EventCarousel';
-export { FloatingPill } from './FloatingPill';
 export { Icon } from './Icon';
 export { IconButton } from './IconButton';
 export { Input } from './Input';

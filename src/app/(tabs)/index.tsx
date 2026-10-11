@@ -9,7 +9,6 @@ import {
   Card,
   EventCard,
   EventCarousel,
-  FloatingPill,
   Icon,
   IconButton,
   Input,
@@ -38,8 +37,8 @@ const FEED_LIMIT = 15;
  * Home (design 6b) as two slides:
  *  1. Your events — greeting, You're going, Your events (cards shrink to fit one
  *     screen), with the Friends | Invites tabs peeking at the bottom.
- *  2. Friends | Invites — fills the screen. Back to slide 1 via the top strip,
- *     pulling down at the top of the list, or (Invites) the "↑ Your events" pill.
+ *  2. Friends | Invites — fills the screen. Back to slide 1 via the top strip
+ *     or by pulling down at the top of the list.
  */
 export default function HomeScreen() {
   const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
@@ -64,7 +63,6 @@ export default function HomeScreen() {
   const [slide1ContentH, setSlide1ContentH] = useState(0);
   const [cardWidth, setCardWidth] = useState<number>(sizes.eventCard.width);
   const [onSlide2, setOnSlide2] = useState(false);
-  const [listScrolled, setListScrolled] = useState(false);
 
   const slide1H = Math.max(0, viewportH - tabsH); // the tabs peek below slide 1
   const slide2Top = Math.max(0, slide1H - sizes.peekStrip); // leaves room for the strip on slide 2
@@ -259,10 +257,7 @@ export default function HomeScreen() {
                   { key: 'invites', label: 'Invites', badge: invitesBadge },
                 ]}
                 value={tab}
-                onChange={(next) => {
-                  setTab(next);
-                  setListScrolled(false);
-                }}
+                onChange={setTab}
               />
             </View>
 
@@ -309,7 +304,7 @@ export default function HomeScreen() {
                 {shownInvites === null && <Text variant="small" tone="muted">Loading…</Text>}
                 {shownInvites?.length === 0 && <Text variant="body" tone="muted">No invites waiting for a reply.</Text>}
                 {!!shownInvites?.length && (
-                  <SlidePager height="content" onPullBack={goToEvents} onIndexChange={(i) => setListScrolled(i > 0)}>
+                  <SlidePager height="content" onPullBack={goToEvents}>
                     {shownInvites.map((i) => (
                       <InviteCard
                         key={i.event_id}
@@ -335,18 +330,10 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
 
-        {/* Ways back to slide 1 — only while on slide 2, never over the tabs or list rows. */}
+        {/* Back to slide 1 — only while on slide 2, never over the tabs or list rows. */}
         {onSlide2 && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
             <PeekStrip label={`Your events · ${going?.length ?? 0} upcoming`} onPress={goToEvents} />
-          </View>
-        )}
-        {onSlide2 && listScrolled && (
-          <View
-            pointerEvents="box-none"
-            style={{ position: 'absolute', top: sizes.peekStrip + tabsH + spacing.sm, left: 0, right: 0, alignItems: 'center' }}
-          >
-            <FloatingPill label="↑ Your events" onPress={goToEvents} />
           </View>
         )}
       </View>
