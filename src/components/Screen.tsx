@@ -15,6 +15,10 @@ type Props = {
    * as you scroll up (always shown at the top of the page).
    */
   collapsingHeader?: ReactNode;
+  /** Indexes of direct children that stick to the top while scrolling (e.g. tabs). */
+  stickyHeaderIndices?: number[];
+  /** Page scroll position, for screens that react to it (e.g. restyling stuck tabs). */
+  onScrollY?: (y: number) => void;
 };
 
 /** Lets inputs ask the screen to scroll them above the keyboard. */
@@ -25,7 +29,7 @@ export const useRevealAboveKeyboard = () => useContext(KeyboardRevealContext);
 const KEYBOARD_GAP = spacing.xl;
 
 /** Page wrapper: background, safe area, side gutters, and keeps focused fields above the keyboard. */
-export function Screen({ children, scroll = true, footer, collapsingHeader }: Props) {
+export function Screen({ children, scroll = true, footer, collapsingHeader, stickyHeaderIndices, onScrollY }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   // Collapsing header: hide distance follows scroll, clamped to the header's height,
   // so any upward scroll starts bringing it back.
@@ -84,6 +88,7 @@ export function Screen({ children, scroll = true, footer, collapsingHeader }: Pr
             <Animated.ScrollView
               ref={scrollRef}
               contentContainerStyle={[styles.content, collapsingHeader ? { paddingTop: headerHeight + spacing.lg } : null]}
+              stickyHeaderIndices={stickyHeaderIndices}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
               automaticallyAdjustKeyboardInsets
@@ -91,6 +96,7 @@ export function Screen({ children, scroll = true, footer, collapsingHeader }: Pr
                 useNativeDriver: true,
                 listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
                   offsetY.current = e.nativeEvent.contentOffset.y;
+                  onScrollY?.(e.nativeEvent.contentOffset.y);
                 },
               })}
               scrollEventThrottle={16}

@@ -32,6 +32,9 @@ type FeedTab = 'friends' | 'invites';
 /** Friends activity shows only the most recent items. */
 const FEED_LIMIT = 15;
 
+/** Position of the Friends | Invites tabs among the page's sections (they stick). */
+const STICKY_TABS_INDEX = 2;
+
 /** Home (design 6b): going + hosting carousels, then Friends / Invites. */
 export default function HomeScreen() {
   const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
@@ -43,6 +46,8 @@ export default function HomeScreen() {
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [invites, setInvites] = useState<MyInvite[] | null>(null);
   const [tab, setTab] = useState<FeedTab>('friends');
+  const [tabsY, setTabsY] = useState(0);
+  const [tabsStuck, setTabsStuck] = useState(false);
   const [busyInvite, setBusyInvite] = useState<string | null>(null);
   // Invites answered on this visit stay visible (for Undo) until Home reloads.
   const [justAnswered, setJustAnswered] = useState<Set<string>>(new Set());
@@ -104,6 +109,8 @@ export default function HomeScreen() {
 
   return (
     <Screen
+      stickyHeaderIndices={[STICKY_TABS_INDEX]}
+      onScrollY={(y) => setTabsStuck(tabsY > 0 && y >= tabsY)}
       collapsingHeader={
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ gap: spacing.xxs }}>
@@ -177,8 +184,8 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Friends | Invites — the section sits flush under the tabs. */}
-      <View>
+      {/* Friends | Invites tabs — stick to the top and float once scrolled to (child index 2). */}
+      <View onLayout={(e) => setTabsY(e.nativeEvent.layout.y)}>
         <Tabs
           tabs={[
             { key: 'friends', label: 'Friends' },
@@ -186,7 +193,12 @@ export default function HomeScreen() {
           ]}
           value={tab}
           onChange={setTab}
+          floating={tabsStuck}
         />
+      </View>
+
+      {/* Flush under the tabs (cancels the page's gap between sections). */}
+      <View style={{ marginTop: -spacing.xl }}>
 
         {/* Friends: continuous list in a bounded box. Invites: one invite per slide. */}
         {tab === 'friends' && (
