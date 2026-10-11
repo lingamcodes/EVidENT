@@ -270,15 +270,16 @@ export async function loadFriends(userId: string): Promise<Person[]> {
     .map(({ id, name, username, avatar_url }) => ({ id, name, username, avatar_url }));
 }
 
-/** People you've already invited to an event (you can only see your own invites as a guest). */
-export async function loadMySentInvites(eventId: string, userId: string): Promise<string[]> {
+/** People you've invited to an event (as a guest you can only see your own invites). */
+export async function loadMySentInvites(eventId: string, userId: string): Promise<Person[]> {
   const { data, error } = await supabase
     .from('event_invites')
-    .select('invitee_id')
+    .select('invitee:users!event_invites_invitee_id_fkey(id, name, username, avatar_url)')
     .eq('event_id', eventId)
-    .eq('invited_by', userId);
+    .eq('invited_by', userId)
+    .order('created_at');
   if (error) throw error;
-  return (data ?? []).map((r) => r.invitee_id);
+  return (data ?? []).map((r) => r.invitee).filter((u): u is Person => !!u);
 }
 
 /** Invite people as a guest (public events when you're going, or private ones that allow it). */

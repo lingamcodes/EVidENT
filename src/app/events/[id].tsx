@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   Icon,
   IconButton,
+  InvitedBox,
   InviteFriendsDialog,
   ParticipantGrid,
   PersonRow,
@@ -25,6 +26,7 @@ import {
   inviteLink,
   inviteToEvent,
   loadEventPage,
+  loadFriends,
   loadMySentInvites,
   type EventPage,
   type Person,
@@ -48,7 +50,9 @@ export default function EventScreen() {
   // Everyone going — only filled in once you're going yourself.
   const [participants, setParticipants] = useState<FriendGoing[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [sentInvites, setSentInvites] = useState<string[]>([]);
+  const [sentInvites, setSentInvites] = useState<Person[]>([]);
+  // Who you follow (individuals) — they come right after you in the participants row.
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
 
   // Reload on focus so edits made in the editor show up when coming back.
   useFocusEffect(
@@ -59,6 +63,10 @@ export default function EventScreen() {
         .catch((e) => setError(e instanceof Error ? e.message : 'Could not load this event.'));
       loadEventSocial(id).then(setSocial).catch(() => setSocial(null));
       loadParticipants(id).then(setParticipants).catch(() => setParticipants([]));
+      loadMySentInvites(id, userId).then(setSentInvites).catch(() => setSentInvites([]));
+      loadFriends(userId)
+        .then((list) => setFriendIds(new Set(list.map((p) => p.id))))
+        .catch(() => {});
     }, [id, userId]),
   );
 
@@ -104,19 +112,28 @@ export default function EventScreen() {
 
   // Guests who are going can invite friends to public events, or to private ones the host opened up.
   const canInvite = published && (page.visibility === 'public' || page.allowGuestInvites);
-  const openInvites = () => {
-    if (userId) loadMySentInvites(id, userId).then(setSentInvites).catch(() => {});
-    setInviteOpen(true);
-  };
+  const openInvites = () => setInviteOpen(true);
   const spotsLeft = page.capacity === null ? null : Math.max(0, page.capacity - (social?.going_count ?? 0));
   const capacityLine =
     spotsLeft === null
       ? 'No Limit'
       : `Max ${page.capacity} people · ${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left. Anyone past that joins the waitlist.`;
   const locked: Record<string, string> = {
-    ...Object.fromEntries(sentInvites.map((pid) => [pid, 'Invited'])),
+    ...Object.fromEntries(sentInvites.map((p) => [p.id, 'Invited'])),
     ...Object.fromEntries(participants.map((p) => [p.id, 'Going'])),
   };
+
+  // Participants row: [You've invited] · You · friends · everyone else. People you
+  // invited sit in the box (greyed until they're going), not again in the row.
+  const goingIds = new Set(participants.map((p) => p.id));
+  const invitedIds = new Set(sentInvites.map((p) => p.id));
+  const others = participants.filter((p) => p.id !== userId && !invitedIds.has(p.id));
+  const orderedParticipants = [
+    ...participants.filter((p) => p.id === userId),
+    ...others.filter((p) => friendIds.has(p.id)),
+    ...others.filter((p) => !friendIds.has(p.id)),
+  ].map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }));
+  const showInvitedBox = canInvite || sentInvites.length > 0;
 
   const goingNames = page.going.slice(0, 2).map((p) => p.name.split(' ')[0]);
   const othersGoing = page.going.length - goingNames.length;
@@ -213,22 +230,29 @@ export default function EventScreen() {
             <View style={{ gap: spacing.md }}>
               <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
               <ParticipantGrid
-                people={participants.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))}
+                people={orderedParticipants}
                 meId={userId}
-                trailing={
-                  canInvite
-                    ? {
-                        label: 'Invite',
-                        node: (
+                leading={
+                  showInvitedBox && (
+                    <InvitedBox
+                      people={sentInvites.map((p) => ({
+                        id: p.id,
+                        name: p.name,
+                        avatarUrl: p.avatar_url,
+                        dimmed: !goingIds.has(p.id),
+                      }))}
+                      inviteButton={
+                        canInvite && (
                           <IconButton
                             icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
                             onPress={openInvites}
                             accessibilityLabel="Invite friends"
                             variant="outline"
                           />
-                        ),
+                        )
                       }
-                    : undefined
+                    />
+                  )
                 }
               />
             </View>
@@ -267,6 +291,7 @@ export default function EventScreen() {
           if (!ids.length || !userId) return;
           try {
             await inviteToEvent(id, userId, ids);
+            loadMySentInvites(id, userId).then(setSentInvites).catch(() => {});
             showNotice(`Invited ${ids.length} ${ids.length === 1 ? 'person' : 'people'}.`);
           } catch (e) {
             showNotice(e instanceof Error ? e.message : 'Could not send the invites.');
