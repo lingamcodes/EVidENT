@@ -160,6 +160,14 @@ const JPEG = Buffer.from(
     check('Mei is promoted to going', soc2?.my_status === 'yes' && soc2?.my_waitlist_rank === 0, JSON.stringify(soc2));
     const { data: soc3 } = await dev.rpc('get_event_social', { p_event_id: EV.kallang });
     check('Dev moves up to waitlist #1', soc3?.my_waitlist_rank === 1, JSON.stringify(soc3));
+    const { data: meiList } = await mei.rpc('get_event_participants', { p_event_id: EV.kallang });
+    check('Mei (going) sees all 2 participants, herself included', meiList?.length === 2 && meiList.some((p) => p.id === ID.mei), JSON.stringify(meiList));
+    const { data: devList } = await dev.rpc('get_event_participants', { p_event_id: EV.kallang });
+    check("Dev (waitlisted) can't see the participant list", Array.isArray(devList) && devList.length === 0, JSON.stringify(devList));
+    const { data: rachelList } = await rachel.rpc('get_event_participants', { p_event_id: EV.kallang });
+    check("Rachel (left) can't see the participant list", Array.isArray(rachelList) && rachelList.length === 0, JSON.stringify(rachelList));
+    const { data: hostList } = await sundown.rpc('get_event_participants', { p_event_id: EV.kallang });
+    check('Host sees the participant list', hostList?.length === 2, JSON.stringify(hostList));
     const { data: hostView } = await sundown.from('rsvps').select('user_id, status, waitlist_position').eq('event_id', EV.kallang);
     const going = hostView?.filter((r) => r.status === 'yes' && r.waitlist_position === null).length;
     check('Host sees exactly 2 going (capacity respected)', going === 2, JSON.stringify(hostView));

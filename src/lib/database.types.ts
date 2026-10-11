@@ -526,6 +526,7 @@ export type Database = {
       can_view_event: { Args: { target_event_id: string }; Returns: boolean }
       check_account: { Args: { lookup_email: string }; Returns: Json }
       generate_invite_code: { Args: never; Returns: string }
+      get_event_participants: { Args: { p_event_id: string }; Returns: Json }
       get_event_social: { Args: { p_event_id: string }; Returns: Json }
       get_home_feed: { Args: { p_limit?: number }; Returns: Json }
       get_invite_preview: { Args: { code: string }; Returns: Json }

@@ -109,6 +109,8 @@ rsvps
   -- other people's RSVPs are never readable directly; counts/feeds come from
   --   get_event_social, get_my_going, get_my_invites, get_home_feed
   --   (feed "is going to" = PUBLIC events only until a privacy setting exists)
+  -- full participant list: get_event_participants(event) — only for confirmed
+  --   going guests (not waitlisted) and the host; everyone else gets []
 
 media
   id, event_id (→events), uploader_id (→users),

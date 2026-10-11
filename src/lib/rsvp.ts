@@ -49,6 +49,13 @@ export async function loadEventSocial(eventId: string): Promise<EventSocial | nu
   return (data as unknown as EventSocial | null) ?? null;
 }
 
+/** Everyone going, if you're going yourself (or hosting); otherwise empty. */
+export async function loadParticipants(eventId: string): Promise<FriendGoing[]> {
+  const { data, error } = await supabase.rpc('get_event_participants', { p_event_id: eventId });
+  if (error) throw error;
+  return (data as unknown as FriendGoing[]) ?? [];
+}
+
 /** "Rachel, Dev + 6 you follow are going" / "43 going". */
 export function socialLine(social: EventSocial) {
   const names = social.followed_going.slice(0, 2).map((p) => p.name.split(' ')[0]);

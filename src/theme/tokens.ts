@@ -168,6 +168,8 @@ export const sizes = {
   tabsRowHeight: 40,
   /** Home: thin "back to Your events" strip shown at the top of slide 2. */
   peekStrip: 36,
+  /** Event page: one face + first name in the participants grid. */
+  participantTile: 64,
   /** Red unseen-count bubble on tabs. */
   countBadge: 18,
   /** Home slide 1 shrinks carousel cards to fit one screen, but never below this. */

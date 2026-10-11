@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   Icon,
   IconButton,
+  ParticipantGrid,
   PersonRow,
   Screen,
   Text,
@@ -20,7 +21,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { directionsUrl, inviteLink, loadEventPage, type EventPage, type Person } from '@/lib/events';
 import { formatEventWhen } from '@/lib/format';
-import { loadEventSocial, rsvpHref, setRsvp, socialLine, type EventSocial, type RsvpStatus } from '@/lib/rsvp';
+import { loadEventSocial, loadParticipants, rsvpHref, setRsvp, socialLine, type EventSocial, type FriendGoing, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
 
 /** Event page (design 11a). The host sees guests + Edit event; the editor opens from here. */
@@ -35,6 +36,8 @@ export default function EventScreen() {
   const [social, setSocial] = useState<EventSocial | null>(null);
   const [replying, setReplying] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  // Everyone going — only filled in once you're going yourself.
+  const [participants, setParticipants] = useState<FriendGoing[]>([]);
 
   // Reload on focus so edits made in the editor show up when coming back.
   useFocusEffect(
@@ -44,6 +47,7 @@ export default function EventScreen() {
         .then(setPage)
         .catch((e) => setError(e instanceof Error ? e.message : 'Could not load this event.'));
       loadEventSocial(id).then(setSocial).catch(() => setSocial(null));
+      loadParticipants(id).then(setParticipants).catch(() => setParticipants([]));
     }, [id, userId]),
   );
 
@@ -63,6 +67,7 @@ export default function EventScreen() {
     try {
       const result = await setRsvp(id, status);
       setSocial(await loadEventSocial(id));
+      loadParticipants(id).then(setParticipants).catch(() => setParticipants([]));
       if (result.waitlisted && !wasGoing) showNotice(`The event is full — you're #${result.waitlist_rank} on the waitlist.`);
     } catch (e) {
       showNotice(e instanceof Error ? e.message : 'Could not save your RSVP.');
@@ -129,11 +134,8 @@ export default function EventScreen() {
         ) : undefined
       }
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={{ flexDirection: 'row' }}>
         <IconButton icon={<Text variant="heading">‹</Text>} onPress={back} accessibilityLabel="Back" variant="ghost" />
-        {published && (
-          <IconButton icon={<Text variant="heading">↗</Text>} onPress={share} accessibilityLabel="Share" variant="ghost" />
-        )}
       </View>
 
       {!published && (
@@ -181,12 +183,23 @@ export default function EventScreen() {
 
       {!page.isHost && social && (
         <View style={{ gap: spacing.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            {social.followed_going.length > 0 && (
-              <AvatarStack people={social.followed_going.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))} />
-            )}
-            <Text variant="label" tone="muted">{socialLine(social)}</Text>
-          </View>
+          {participants.length > 0 ? (
+            // You're going: see everyone who's going.
+            <View style={{ gap: spacing.md }}>
+              <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
+              <ParticipantGrid
+                people={participants.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))}
+                meId={userId}
+              />
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              {social.followed_going.length > 0 && (
+                <AvatarStack people={social.followed_going.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))} />
+              )}
+              <Text variant="label" tone="muted">{socialLine(social)}</Text>
+            </View>
+          )}
           <GuestStatus social={social} busy={replying} onRespond={respond} />
         </View>
       )}
@@ -274,7 +287,7 @@ type GuestProps = {
   onOpenAnswers: () => void;
 };
 
-/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going ▾ · Share. */
+/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going (menu) · Share. */
 function GuestFooter({
   social,
   busy,
@@ -312,7 +325,7 @@ function GuestFooter({
       <View style={{ flex: 1 }}>
         {status === 'yes' ? (
           <GoingButton
-            label={waitlisted ? `Waitlisted · #${social.my_waitlist_rank}` : "You're going ✓"}
+            label={waitlisted ? `Waitlisted · #${social.my_waitlist_rank}` : "You're going"}
             hasQuestions={social.has_questions}
             busy={busy}
             onOpenAnswers={onOpenAnswers}
@@ -327,7 +340,7 @@ function GuestFooter({
   );
 }
 
-/** "You're going ▾": opens a menu to edit your answers (if the event has questions) or leave. */
+/** "You're going": opens a menu to edit your answers (if the event has questions) or leave. */
 function GoingButton({
   label,
   hasQuestions,
@@ -353,7 +366,7 @@ function GoingButton({
 
   return (
     <View ref={anchorRef} collapsable={false}>
-      <Button label={`${label}  ▾`} variant="soft" onPress={openMenu} disabled={busy} fullWidth />
+      <Button label={label} variant="soft" onPress={openMenu} disabled={busy} fullWidth />
       <DropdownMenu
         visible={open}
         onClose={() => setOpen(false)}
@@ -371,7 +384,7 @@ function GoingButton({
 /** Your current reply on the page, with ways to change it. */
 function GuestStatus({ social, busy, onRespond }: Omit<GuestProps, 'onOpenAnswers'>) {
   const status = social.my_status;
-  // Going: the footer's "You're going ▾" menu covers editing answers and leaving.
+  // Going: the footer's "You're going" menu covers editing answers and leaving.
   if (!status || status === 'yes') return null;
 
   const line = {
