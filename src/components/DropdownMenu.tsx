@@ -1,9 +1,9 @@
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { borders, colors, radii, shadows, spacing } from '@/theme/tokens';
+import { borders, colors, opacity, radii, shadows, spacing } from '@/theme/tokens';
 import { Text } from './Text';
 
-export type MenuItem = { label: string; onPress: () => void; tone?: 'default' | 'danger' };
+export type MenuItem = { label: string; onPress: () => void; tone?: 'default' | 'danger'; disabled?: boolean };
 
 /** Where the menu hangs from: the trigger's position on screen (from measureInWindow). */
 export type MenuAnchor = { x: number; y: number; width: number; height: number };
@@ -17,7 +17,7 @@ type Props = {
   direction?: 'up' | 'down';
 };
 
-/** A small list of options that opens from a button; tapping outside closes it. */
+/** A small list of options that opens from a button over a darkened screen; tapping outside closes it. */
 export function DropdownMenu({ visible, onClose, anchor, items, direction = 'down' }: Props) {
   const { height: screenHeight } = useWindowDimensions();
   if (!anchor) return null;
@@ -38,10 +38,14 @@ export function DropdownMenu({ visible, onClose, anchor, items, direction = 'dow
                 onClose();
                 item.onPress();
               }}
+              disabled={item.disabled}
               accessibilityRole="menuitem"
+              accessibilityState={{ disabled: !!item.disabled }}
               style={({ pressed }) => [styles.item, i > 0 && styles.divided, pressed && styles.pressed]}
             >
-              <Text variant="label" tone={item.tone === 'danger' ? 'danger' : 'default'}>{item.label}</Text>
+              <View style={item.disabled && styles.disabled}>
+                <Text variant="label" tone={item.tone === 'danger' ? 'danger' : 'default'}>{item.label}</Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -51,7 +55,7 @@ export function DropdownMenu({ visible, onClose, anchor, items, direction = 'dow
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: colors.scrim },
   menu: {
     position: 'absolute',
     borderRadius: radii.md,
@@ -64,4 +68,5 @@ const styles = StyleSheet.create({
   item: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   divided: { borderTopWidth: borders.hairline, borderTopColor: colors.border },
   pressed: { backgroundColor: colors.pressedTint },
+  disabled: { opacity: opacity.dimmed },
 });

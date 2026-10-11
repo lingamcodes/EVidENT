@@ -340,7 +340,7 @@ function GuestFooter({
   );
 }
 
-/** "You're going": opens a menu to edit your answers (if the event has questions) or leave. */
+/** "You're going": darkens the screen and offers Leave event · Edit response · Cancel. */
 function GoingButton({
   label,
   hasQuestions,
@@ -373,8 +373,10 @@ function GoingButton({
         anchor={anchor}
         direction="up"
         items={[
-          ...(hasQuestions ? [{ label: 'Edit your answers', onPress: onOpenAnswers }] : []),
-          { label: 'Leave event', onPress: onLeave, tone: 'danger' as const },
+          { label: 'Leave event', onPress: onLeave, tone: 'danger' },
+          // Greyed out when the event has no questionnaire (nothing to edit).
+          { label: 'Edit response', onPress: onOpenAnswers, disabled: !hasQuestions },
+          { label: 'Cancel', onPress: () => {} },
         ]}
       />
     </View>
