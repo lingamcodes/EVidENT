@@ -20,14 +20,19 @@ type Props = {
  * only appears while scrolling) that shows how far down you are. Height is a share
  * of the screen so it fits any phone; nested scrolling works on Android too.
  */
-export function ScrollPanel({ children, height = 'half' }: Props) {
+/** Height of a bounded section: half the screen, or the screen below a Tabs row. */
+export function usePanelHeight(height: 'half' | 'fill') {
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const panelHeight = Math.round(
+  return Math.round(
     height === 'fill'
       ? screenHeight - insets.top - insets.bottom - sizes.tabBarContentHeight - sizes.tabsRowHeight - spacing.md
       : screenHeight * sizes.scrollPanelScreenShare,
   );
+}
+
+export function ScrollPanel({ children, height = 'half' }: Props) {
+  const panelHeight = usePanelHeight(height);
   const [contentHeight, setContentHeight] = useState(0);
   const [offset, setOffset] = useState(0);
 

@@ -15,6 +15,7 @@ import {
   InviteCard,
   Screen,
   ScrollPanel,
+  SlidePager,
   SectionHeader,
   Tabs,
   Text,
@@ -187,55 +188,55 @@ export default function HomeScreen() {
           onChange={setTab}
         />
 
-        {/* Bounded box with its own scroll, so a long feed doesn't push the page down. */}
-        <ScrollPanel height="fill">
-          {tab === 'friends' && (
-            <View style={{ gap: spacing.md }}>
-              {feed === null && <Text variant="small" tone="muted">Loading…</Text>}
-              {feed?.length === 0 && (
-                <Text variant="body" tone="muted">
-                  When people you follow host or join public events, it shows up here.
-                </Text>
-              )}
-              {feed?.map((item) => (
-                <ActivityRow
-                  key={`${item.verb}-${item.actor_id}-${item.event_id ?? item.target_user_id}-${item.at}`}
-                  time={timeAgo(item.at)}
-                  thumbUrl={item.thumb}
-                  thumbShape={item.verb === 'followed' ? 'circle' : 'rounded'}
-                  onPress={item.event_id ? () => openEvent(item.event_id!) : undefined}
-                >
-                  <Bold>{item.actor_name}</Bold> {verbText[item.verb]} <Bold>{item.target}</Bold>
-                </ActivityRow>
-              ))}
-            </View>
-          )}
+        {/* Friends: continuous list in a bounded box. Invites: one invite per slide. */}
+        {tab === 'friends' && (
+          <ScrollPanel height="fill">
+            {feed === null && <Text variant="small" tone="muted">Loading…</Text>}
+            {feed?.length === 0 && (
+              <Text variant="body" tone="muted">
+                When people you follow host or join public events, it shows up here.
+              </Text>
+            )}
+            {feed?.map((item) => (
+              <ActivityRow
+                key={`${item.verb}-${item.actor_id}-${item.event_id ?? item.target_user_id}-${item.at}`}
+                time={timeAgo(item.at)}
+                thumbUrl={item.thumb}
+                thumbShape={item.verb === 'followed' ? 'circle' : 'rounded'}
+                onPress={item.event_id ? () => openEvent(item.event_id!) : undefined}
+              >
+                <Bold>{item.actor_name}</Bold> {verbText[item.verb]} <Bold>{item.target}</Bold>
+              </ActivityRow>
+            ))}
+          </ScrollPanel>
+        )}
 
-          {tab === 'invites' && (
-            <View style={{ gap: spacing.md }}>
-              {shownInvites === null && <Text variant="small" tone="muted">Loading…</Text>}
-              {shownInvites?.length === 0 && <Text variant="body" tone="muted">No invites waiting for a reply.</Text>}
-              {shownInvites?.map((i) => (
-                <InviteCard
-                  key={i.event_id}
-                  inviterName={i.inviter_name}
-                  inviterAvatarUrl={i.inviter_avatar_url}
-                  title={i.title}
-                  coverUrl={i.cover_image}
-                  friendsGoing={i.friends_going}
-                  when={formatWhen(i.date_time)}
-                  where={i.location}
-                  status={i.my_status}
-                  busy={busyInvite === i.event_id}
-                  onAccept={() => reply(i, 'yes')}
-                  onDecline={() => reply(i, 'no')}
-                  onUndo={() => reply(i, null)}
-                  onPress={() => openEvent(i.event_id)}
-                />
-              ))}
-            </View>
-          )}
-        </ScrollPanel>
+        {tab === 'invites' && shownInvites === null && <Text variant="small" tone="muted">Loading…</Text>}
+        {tab === 'invites' && shownInvites?.length === 0 && (
+          <Text variant="body" tone="muted">No invites waiting for a reply.</Text>
+        )}
+        {tab === 'invites' && !!shownInvites?.length && (
+          <SlidePager height="fill">
+            {shownInvites.map((i) => (
+              <InviteCard
+                key={i.event_id}
+                inviterName={i.inviter_name}
+                inviterAvatarUrl={i.inviter_avatar_url}
+                title={i.title}
+                coverUrl={i.cover_image}
+                friendsGoing={i.friends_going}
+                when={formatWhen(i.date_time)}
+                where={i.location}
+                status={i.my_status}
+                busy={busyInvite === i.event_id}
+                onAccept={() => reply(i, 'yes')}
+                onDecline={() => reply(i, 'no')}
+                onUndo={() => reply(i, null)}
+                onPress={() => openEvent(i.event_id)}
+              />
+            ))}
+          </SlidePager>
+        )}
       </View>
 
       {/* Paste an invite link or code */}
