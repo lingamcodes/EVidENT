@@ -13,11 +13,6 @@ type Props = {
    * at the edges, never stretched. Leave out to follow the photo's own shape.
    */
   aspect?: number;
-  /**
-   * 'cover' fills the box (edges trimmed). 'contain' shows the whole photo inside
-   * the box, over a blurred copy of itself so there are no empty bars.
-   */
-  fit?: 'cover' | 'contain';
   /** Overlays such as badges, positioned over the photo. */
   children?: ReactNode;
   accessibilityLabel?: string;
@@ -30,20 +25,17 @@ const clamp = (ratio: number) => Math.min(max, Math.max(min, ratio));
  * Event cover whose box follows the photo's own shape (as cropped in the picker),
  * so it is never stretched. Very tall/wide photos are clamped and trimmed at the edges.
  */
-export function CoverImage({ uri, rounded = true, aspect, fit = 'cover', children, accessibilityLabel }: Props) {
+export function CoverImage({ uri, rounded = true, aspect, children, accessibilityLabel }: Props) {
   const [natural, setNatural] = useState(fallback);
   const ratio = aspect ?? natural;
 
   return (
     <View style={[styles.box, { aspectRatio: ratio }, rounded && styles.rounded]}>
-      {uri && fit === 'contain' && (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={sizes.coverBackdropBlur} />
-      )}
       {uri ? (
         <Image
           source={{ uri }}
           style={StyleSheet.absoluteFill}
-          contentFit={fit}
+          contentFit="cover"
           accessibilityLabel={accessibilityLabel}
           onLoad={(e) => {
             const { width, height } = e.source;

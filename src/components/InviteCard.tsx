@@ -68,7 +68,7 @@ export function InviteCard({
     <View style={styles.card}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${inviterName} invites you to ${title}`}>
         {coverUrl ? (
-          <CoverImage uri={coverUrl} rounded={false} aspect={sizes.cardCoverAspect} fit="contain">
+          <CoverImage uri={coverUrl} rounded={false} aspect={sizes.cardCoverAspect}>
             <View style={styles.overlay}>{heading(true)}</View>
           </CoverImage>
         ) : (
