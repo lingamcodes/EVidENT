@@ -28,6 +28,9 @@ import { spacing } from '@/theme/tokens';
 
 type FeedTab = 'friends' | 'invites';
 
+/** Friends activity shows only the most recent items. */
+const FEED_LIMIT = 15;
+
 /** Home (design 6b): going + hosting carousels, then Friends / Invites. */
 export default function HomeScreen() {
   const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
@@ -49,7 +52,7 @@ export default function HomeScreen() {
     if (!userId) return;
     loadMyGoing().then(setGoing).catch(() => setGoing([]));
     loadMyEvents(userId).then(setHosting).catch(() => setHosting([]));
-    loadFeed().then(setFeed).catch(() => setFeed([]));
+    loadFeed(FEED_LIMIT).then(setFeed).catch(() => setFeed([]));
     loadMyInvites().then(setInvites).catch(() => setInvites([]));
     setJustAnswered(new Set());
   }, [userId]);

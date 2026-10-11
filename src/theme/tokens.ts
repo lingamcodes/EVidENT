@@ -157,6 +157,9 @@ export const sizes = {
   eventCard: { width: 220, imageHeight: 172 },
   /** Home's Friends / Invites box: this share of the screen height, scrolling inside. */
   scrollPanelScreenShare: 0.5,
+  /** Always-visible scroll bar beside a ScrollPanel: track width, shortest handle. */
+  scrollTrack: 4,
+  scrollThumbMin: 24,
 } as const;
 
 export const borders = {
