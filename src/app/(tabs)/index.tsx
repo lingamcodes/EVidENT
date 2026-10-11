@@ -38,8 +38,8 @@ const FEED_LIMIT = 15;
  * Home (design 6b) as two slides:
  *  1. Your events — greeting, You're going, Your events (cards shrink to fit one
  *     screen), with the Friends | Invites tabs peeking at the bottom.
- *  2. Friends | Invites — fills the screen. Back to slide 1 via the top strip, the
- *     "↑ Your events" pill, or pulling down at the top of the list.
+ *  2. Friends | Invites — fills the screen. Back to slide 1 via the top strip,
+ *     pulling down at the top of the list, or (Invites) the "↑ Your events" pill.
  */
 export default function HomeScreen() {
   const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
@@ -267,11 +267,7 @@ export default function HomeScreen() {
             </View>
 
             {tab === 'friends' && (
-              <ScrollPanel
-                height={listH}
-                onScrollY={(y) => setListScrolled(y > sizes.pullBackDistance)}
-                onPullBack={goToEvents}
-              >
+              <ScrollPanel height={listH} onPullBack={goToEvents}>
                 {feed === null && <Text variant="small" tone="muted">Loading…</Text>}
                 {feed?.length === 0 && (
                   <Text variant="body" tone="muted">When people you follow host or join public events, it shows up here.</Text>
