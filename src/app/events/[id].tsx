@@ -122,6 +122,7 @@ export default function EventScreen() {
             onOpenAnswers={openAnswers}
             onShare={share}
             canShare={published}
+            onLeave={() => setConfirmLeave(true)}
           />
         ) : undefined
       }
@@ -189,7 +190,6 @@ export default function EventScreen() {
             busy={replying}
             onRespond={respond}
             onOpenAnswers={openAnswers}
-            onLeave={() => setConfirmLeave(true)}
           />
         </View>
       )}
@@ -277,7 +277,7 @@ type GuestProps = {
   onOpenAnswers: () => void;
 };
 
-/** Pinned buttons for guests (design 4c): I'm going · Share. */
+/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going · Leave · Share. */
 function GuestFooter({
   social,
   busy,
@@ -285,7 +285,8 @@ function GuestFooter({
   onOpenAnswers,
   onShare,
   canShare,
-}: GuestProps & { onShare: () => void; canShare: boolean }) {
+  onLeave,
+}: GuestProps & { onShare: () => void; canShare: boolean; onLeave: () => void }) {
   const status = social.my_status;
   const waitlisted = status === 'yes' && social.my_waitlist_rank > 0;
   const share = (
@@ -323,15 +324,20 @@ function GuestFooter({
           <Button label="I'm going" onPress={() => onRespond('yes')} loading={busy} fullWidth />
         )}
       </View>
+      {(status === 'yes' || status === 'maybe') && (
+        <Button label="Leave" variant="dangerSoft" onPress={onLeave} disabled={busy} />
+      )}
       {share}
     </>
   );
 }
 
 /** Your current reply on the page, with ways to change it. */
-function GuestStatus({ social, busy, onRespond, onOpenAnswers, onLeave }: GuestProps & { onLeave: () => void }) {
+function GuestStatus({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
   const status = social.my_status;
   if (!status) return null;
+  // Going without a questionnaire: the footer already says it all (You're going · Leave).
+  if (status === 'yes' && !social.has_questions) return null;
 
   const line = {
     yes: social.my_waitlist_rank > 0 ? `You're #${social.my_waitlist_rank} on the waitlist` : "You're going",
@@ -347,7 +353,6 @@ function GuestStatus({ social, busy, onRespond, onOpenAnswers, onLeave }: GuestP
           {status === 'yes' && social.has_questions && (
             <Button label="Your answers" variant="secondary" size="sm" onPress={onOpenAnswers} />
           )}
-          {status !== 'no' && <Button label="Leave event" variant="dangerSoft" size="sm" onPress={onLeave} disabled={busy} />}
           {status === 'no' && (
             <Button label="Undo" variant="ghost" size="sm" onPress={() => onRespond(null)} disabled={busy} />
           )}
