@@ -29,3 +29,15 @@ export async function loadFeed(limit = 30): Promise<FeedItem[]> {
   if (error) throw error;
   return (data as unknown as FeedItem[]) ?? [];
 }
+
+/** Home's Friends / Invites badges: record that the user has now seen that tab (stored on the account). */
+export async function markSeen(userId: string, which: 'friends' | 'invites') {
+  const now = new Date().toISOString();
+  const patch = which === 'friends' ? { last_seen_friends_at: now } : { last_seen_invites_at: now };
+  await supabase.from('users').update(patch).eq('id', userId);
+  return now;
+}
+
+/** True if `at` is newer than the last time the tab was seen (never seen = everything is new). */
+export const isUnseen = (at: string, seenAt: string | null | undefined) =>
+  !seenAt || new Date(at).getTime() > new Date(seenAt).getTime();

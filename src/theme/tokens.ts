@@ -52,6 +52,8 @@ export const palette = {
   red100: '#ffe7e3',
   red400: '#cd6055',
   red700: '#902822',
+  // Not in the design — bright red for unseen-count badges (notification convention).
+  alertRed: '#e0443a',
 } as const;
 
 /* ── Semantic colours: name = job, not hue ── */
@@ -93,6 +95,7 @@ export const colors = {
   danger: palette.red700,
   dangerBorder: palette.red400,
   dangerSoft: palette.red100,
+  alertBadge: palette.alertRed,
 
   markerBorder: palette.neutral500,
   dashedBorder: palette.clay400,
@@ -163,6 +166,14 @@ export const sizes = {
    */
   tabBarContentHeight: 56,
   tabsRowHeight: 40,
+  /** Home: thin "back to Your events" strip shown at the top of slide 2. */
+  peekStrip: 36,
+  /** Red unseen-count bubble on tabs. */
+  countBadge: 18,
+  /** Home slide 1 shrinks carousel cards to fit one screen, but never below this. */
+  eventCardMinWidth: 150,
+  /** Pull this far past the top of a list (iOS) to jump back to the previous slide. */
+  pullBackDistance: 60,
   /** Always-visible scroll bar beside a ScrollPanel: track width, shortest handle. */
   scrollTrack: 4,
   scrollThumbMin: 24,
@@ -178,6 +189,8 @@ export const opacity = {
   disabled: 0.45,
   /** Drafts on Home: greyed out so they read as not-yet-live. */
   dimmed: 0.5,
+  /** Floating buttons while pressed. */
+  pressed: 0.8,
 } as const;
 
 /* ── Shadows (RN boxShadow strings) ── */
@@ -214,6 +227,8 @@ export const typography = {
   buttonSmall: { fontFamily: fonts.bodyBold, fontSize: 11.5 },
   buttonTiny: { fontFamily: fonts.bodyBold, fontSize: 10.5 },
   tab: { fontFamily: fonts.bodyBold, fontSize: 12.5 },
+  tabLarge: { fontFamily: fonts.bodyBold, fontSize: 16 },
+  badgeCount: { fontFamily: fonts.bodyBold, fontSize: 11 },
   label: { fontFamily: fonts.bodySemiBold, fontSize: 12.5 },
   small: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
   caption: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },

@@ -476,6 +476,8 @@ export type Database = {
           email: string | null
           has_password: boolean
           id: string
+          last_seen_friends_at: string | null
+          last_seen_invites_at: string | null
           name: string
           onboarded_at: string | null
           username: string | null
@@ -489,6 +491,8 @@ export type Database = {
           email?: string | null
           has_password?: boolean
           id: string
+          last_seen_friends_at?: string | null
+          last_seen_invites_at?: string | null
           name?: string
           onboarded_at?: string | null
           username?: string | null
@@ -502,6 +506,8 @@ export type Database = {
           email?: string | null
           has_password?: boolean
           id?: string
+          last_seen_friends_at?: string | null
+          last_seen_invites_at?: string | null
           name?: string
           onboarded_at?: string | null
           username?: string | null
@@ -536,6 +542,8 @@ export type Database = {
           email: string | null
           has_password: boolean
           id: string
+          last_seen_friends_at: string | null
+          last_seen_invites_at: string | null
           name: string
           onboarded_at: string | null
           username: string | null

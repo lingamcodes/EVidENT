@@ -84,6 +84,8 @@ export type MyInvite = {
   cover_image: string | null;
   inviter_name: string;
   inviter_avatar_url: string | null;
+  /** When you were invited — for the unseen-invites badge. */
+  invited_at: string;
   friends_going: number;
   has_questions: boolean;
   my_status: RsvpStatus | null;

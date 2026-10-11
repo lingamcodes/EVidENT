@@ -6,15 +6,17 @@ import { layout, sizes, spacing } from '@/theme/tokens';
 type Props = {
   /** EventCards — all the same size, so the carousel snaps card by card. */
   children: ReactNode;
+  /** Width the cards were given (defaults to the standard card width). */
+  cardWidth?: number;
 };
 
 /** Horizontal row of EventCards with consistent spacing that snaps one card at a time. */
-export function EventCarousel({ children }: Props) {
+export function EventCarousel({ children, cardWidth = sizes.eventCard.width }: Props) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      snapToInterval={sizes.eventCard.width + spacing.md}
+      snapToInterval={cardWidth + spacing.md}
       snapToAlignment="start"
       decelerationRate="fast"
       // Bleed to the screen edges so cards slide under the gutters, but start aligned with content.

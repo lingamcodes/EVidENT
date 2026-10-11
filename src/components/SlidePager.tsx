@@ -2,6 +2,7 @@ import { Children, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { usePullBack } from './pullBack';
 import { usePanelHeight } from './ScrollPanel';
 
 type Props = {
@@ -9,6 +10,10 @@ type Props = {
   children: ReactNode;
   /** 'content' = exactly as tall as the tallest slide's content (no empty space above it). */
   height?: 'half' | 'fill' | 'content';
+  /** Pulling down on the first slide (e.g. back to the section above). */
+  onPullBack?: () => void;
+  /** Which slide is showing (0-based). */
+  onIndexChange?: (index: number) => void;
 };
 
 /**
@@ -16,10 +21,11 @@ type Props = {
  * to the next one instead of free-scrolling. Dots on the right show which slide
  * you're on.
  */
-export function SlidePager({ children, height = 'fill' }: Props) {
+export function SlidePager({ children, height = 'fill', onPullBack, onIndexChange }: Props) {
   const panelHeight = usePanelHeight(height === 'content' ? 'fill' : height);
   const slides = Children.toArray(children);
   const [index, setIndex] = useState(0);
+  const pullBack = usePullBack(onPullBack);
   // 'content': measure each slide's natural height and size every page to the tallest.
   const [contentHeight, setContentHeight] = useState(0);
   const pageHeight = height === 'content' && contentHeight ? contentHeight : panelHeight;
@@ -32,7 +38,13 @@ export function SlidePager({ children, height = 'fill' }: Props) {
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         decelerationRate="fast"
-        onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.y / pageHeight))}
+        onMomentumScrollEnd={(e) => {
+          const next = Math.round(e.nativeEvent.contentOffset.y / pageHeight);
+          setIndex(next);
+          onIndexChange?.(next);
+        }}
+        onScrollBeginDrag={pullBack.onScrollBeginDrag}
+        onScrollEndDrag={pullBack.onScrollEndDrag}
       >
         {slides.map((slide, i) => (
           <View

@@ -15,16 +15,18 @@ type Props = {
   onPress: () => void;
   /** Greys out the photo and text (e.g. drafts); the action stays fully visible. */
   dimmed?: boolean;
+  /** Override the standard card width (Home shrinks cards to fit one screen). */
+  width?: number;
 };
 
 /** Photo-topped event card used in the "You're going" / "Your events" carousels. */
-export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false }: Props) {
+export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false, width }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${meta}`}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, width !== undefined && { width }, pressed && styles.pressed]}
     >
       {/* Standard square cover so carousels line up. */}
       <CoverImage uri={imageUrl ?? null} rounded={false}>
