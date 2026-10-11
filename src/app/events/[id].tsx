@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Linking, ScrollView, Share, View } from 'react-native';
 
 import {
@@ -9,11 +9,13 @@ import {
   CoverImage,
   Dialog,
   Divider,
+  DropdownMenu,
   Icon,
   IconButton,
   PersonRow,
   Screen,
   Text,
+  type MenuAnchor,
 } from '@/components';
 import { useAuth } from '@/lib/auth';
 import { directionsUrl, inviteLink, loadEventPage, type EventPage, type Person } from '@/lib/events';
@@ -185,12 +187,7 @@ export default function EventScreen() {
             )}
             <Text variant="label" tone="muted">{socialLine(social)}</Text>
           </View>
-          <GuestStatus
-            social={social}
-            busy={replying}
-            onRespond={respond}
-            onOpenAnswers={openAnswers}
-          />
+          <GuestStatus social={social} busy={replying} onRespond={respond} />
         </View>
       )}
 
@@ -277,7 +274,7 @@ type GuestProps = {
   onOpenAnswers: () => void;
 };
 
-/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going · Leave · Share. */
+/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going ▾ · Share. */
 function GuestFooter({
   social,
   busy,
@@ -314,33 +311,70 @@ function GuestFooter({
     <>
       <View style={{ flex: 1 }}>
         {status === 'yes' ? (
-          <Button
+          <GoingButton
             label={waitlisted ? `Waitlisted · #${social.my_waitlist_rank}` : "You're going ✓"}
-            variant="soft"
-            onPress={social.has_questions ? onOpenAnswers : () => {}}
-            fullWidth
+            hasQuestions={social.has_questions}
+            busy={busy}
+            onOpenAnswers={onOpenAnswers}
+            onLeave={onLeave}
           />
         ) : (
           <Button label="I'm going" onPress={() => onRespond('yes')} loading={busy} fullWidth />
         )}
       </View>
-      {(status === 'yes' || status === 'maybe') && (
-        <Button label="Leave" variant="dangerSoft" onPress={onLeave} disabled={busy} />
-      )}
       {share}
     </>
   );
 }
 
+/** "You're going ▾": opens a menu to edit your answers (if the event has questions) or leave. */
+function GoingButton({
+  label,
+  hasQuestions,
+  busy,
+  onOpenAnswers,
+  onLeave,
+}: {
+  label: string;
+  hasQuestions: boolean;
+  busy: boolean;
+  onOpenAnswers: () => void;
+  onLeave: () => void;
+}) {
+  const anchorRef = useRef<View>(null);
+  const [anchor, setAnchor] = useState<MenuAnchor | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const openMenu = () =>
+    anchorRef.current?.measureInWindow((x, y, width, height) => {
+      setAnchor({ x, y, width, height });
+      setOpen(true);
+    });
+
+  return (
+    <View ref={anchorRef} collapsable={false}>
+      <Button label={`${label}  ▾`} variant="soft" onPress={openMenu} disabled={busy} fullWidth />
+      <DropdownMenu
+        visible={open}
+        onClose={() => setOpen(false)}
+        anchor={anchor}
+        direction="up"
+        items={[
+          ...(hasQuestions ? [{ label: 'Edit your answers', onPress: onOpenAnswers }] : []),
+          { label: 'Leave event', onPress: onLeave, tone: 'danger' as const },
+        ]}
+      />
+    </View>
+  );
+}
+
 /** Your current reply on the page, with ways to change it. */
-function GuestStatus({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
+function GuestStatus({ social, busy, onRespond }: Omit<GuestProps, 'onOpenAnswers'>) {
   const status = social.my_status;
-  if (!status) return null;
-  // Going without a questionnaire: the footer already says it all (You're going · Leave).
-  if (status === 'yes' && !social.has_questions) return null;
+  // Going: the footer's "You're going ▾" menu covers editing answers and leaving.
+  if (!status || status === 'yes') return null;
 
   const line = {
-    yes: social.my_waitlist_rank > 0 ? `You're #${social.my_waitlist_rank} on the waitlist` : "You're going",
     maybe: 'You said maybe',
     no: 'You left this event',
   }[status];
@@ -350,9 +384,6 @@ function GuestStatus({ social, busy, onRespond, onOpenAnswers }: GuestProps) {
       <View style={{ gap: spacing.sm }}>
         <Text variant="bodyStrong">{line}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-          {status === 'yes' && social.has_questions && (
-            <Button label="Your answers" variant="secondary" size="sm" onPress={onOpenAnswers} />
-          )}
           {status === 'no' && (
             <Button label="Undo" variant="ghost" size="sm" onPress={() => onRespond(null)} disabled={busy} />
           )}

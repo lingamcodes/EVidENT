@@ -12,6 +12,7 @@ export { ChoiceRow } from './ChoiceRow';
 export { CoverImage } from './CoverImage';
 export { DateTimeField } from './DateTimeField';
 export { Dialog } from './Dialog';
+export { DropdownMenu, type MenuAnchor, type MenuItem } from './DropdownMenu';
 export { Divider } from './Divider';
 export { EventCard } from './EventCard';
 export { EventCarousel } from './EventCarousel';
