@@ -266,6 +266,30 @@ export async function loadFollowing(userId: string): Promise<Person[]> {
   return (data ?? []).map((r) => r.users).filter((u): u is Person => !!u);
 }
 
+/** People you've already invited to an event (you can only see your own invites as a guest). */
+export async function loadMySentInvites(eventId: string, userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('event_invites')
+    .select('invitee_id')
+    .eq('event_id', eventId)
+    .eq('invited_by', userId);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.invitee_id);
+}
+
+/** Invite people as a guest (public events when you're going, or private ones that allow it). */
+export async function inviteToEvent(eventId: string, userId: string, inviteeIds: string[]) {
+  if (!inviteeIds.length) return;
+  const { error } = await supabase
+    .from('event_invites')
+    // Someone else may have invited them already: skip those instead of failing.
+    .upsert(
+      inviteeIds.map((invitee_id) => ({ event_id: eventId, invitee_id, invited_by: userId })),
+      { onConflict: 'event_id,invitee_id', ignoreDuplicates: true },
+    );
+  if (error) throw error;
+}
+
 export type EventPage = {
   id: string;
   title: string;
@@ -278,6 +302,8 @@ export type EventPage = {
   coverUrl: string | null;
   notes: string | null;
   capacity: number | null;
+  /** Private events: guests may invite people too. */
+  allowGuestInvites: boolean;
   inviteCode: string;
   host: Person;
   isHost: boolean;
@@ -333,6 +359,7 @@ export async function loadEventPage(id: string, viewerId: string): Promise<Event
     coverUrl: event.cover_image,
     notes: event.description,
     capacity: event.capacity,
+    allowGuestInvites: event.allow_guest_invites,
     inviteCode: event.invite_code,
     host: event.host as Person,
     isHost: event.host_id === viewerId,

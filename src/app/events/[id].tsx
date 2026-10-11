@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   Icon,
   IconButton,
+  InviteFriendsDialog,
   ParticipantGrid,
   PersonRow,
   Screen,
@@ -19,7 +20,15 @@ import {
   type MenuAnchor,
 } from '@/components';
 import { useAuth } from '@/lib/auth';
-import { directionsUrl, inviteLink, loadEventPage, type EventPage, type Person } from '@/lib/events';
+import {
+  directionsUrl,
+  inviteLink,
+  inviteToEvent,
+  loadEventPage,
+  loadMySentInvites,
+  type EventPage,
+  type Person,
+} from '@/lib/events';
 import { formatEventWhen } from '@/lib/format';
 import { loadEventSocial, loadParticipants, rsvpHref, setRsvp, socialLine, type EventSocial, type FriendGoing, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
@@ -38,6 +47,8 @@ export default function EventScreen() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   // Everyone going — only filled in once you're going yourself.
   const [participants, setParticipants] = useState<FriendGoing[]>([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [sentInvites, setSentInvites] = useState<string[]>([]);
 
   // Reload on focus so edits made in the editor show up when coming back.
   useFocusEffect(
@@ -91,6 +102,22 @@ export default function EventScreen() {
   const share = () =>
     Share.share({ message: `You're invited to ${page.title} on Evident: ${inviteLink(page.inviteCode)}` });
 
+  // Guests who are going can invite friends to public events, or to private ones the host opened up.
+  const canInvite = published && (page.visibility === 'public' || page.allowGuestInvites);
+  const openInvites = () => {
+    if (userId) loadMySentInvites(id, userId).then(setSentInvites).catch(() => {});
+    setInviteOpen(true);
+  };
+  const spotsLeft = page.capacity === null ? null : Math.max(0, page.capacity - (social?.going_count ?? 0));
+  const capacityLine =
+    spotsLeft === null
+      ? `No limit — ${social?.going_count ?? 0} going so far.`
+      : `Max ${page.capacity} people · ${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left. Anyone past that joins the waitlist.`;
+  const locked: Record<string, string> = {
+    ...Object.fromEntries(sentInvites.map((pid) => [pid, 'Invited'])),
+    ...Object.fromEntries(participants.map((p) => [p.id, 'Going'])),
+  };
+
   const goingNames = page.going.slice(0, 2).map((p) => p.name.split(' ')[0]);
   const othersGoing = page.going.length - goingNames.length;
   const guestSummary = [
@@ -127,8 +154,6 @@ export default function EventScreen() {
             busy={replying}
             onRespond={respond}
             onOpenAnswers={openAnswers}
-            onShare={share}
-            canShare={published}
             onLeave={() => setConfirmLeave(true)}
           />
         ) : undefined
@@ -186,7 +211,17 @@ export default function EventScreen() {
           {participants.length > 0 ? (
             // You're going: see everyone who's going.
             <View style={{ gap: spacing.md }}>
-              <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
+                {canInvite && (
+                  <IconButton
+                    icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
+                    onPress={openInvites}
+                    accessibilityLabel="Invite friends"
+                    variant="outline"
+                  />
+                )}
+              </View>
               <ParticipantGrid
                 people={participants.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))}
                 meId={userId}
@@ -213,6 +248,26 @@ export default function EventScreen() {
           </View>
         </>
       )}
+
+      <InviteFriendsDialog
+        visible={inviteOpen}
+        userId={userId}
+        selected={[]}
+        intro={capacityLine}
+        locked={locked}
+        onClose={() => setInviteOpen(false)}
+        onDone={async (people) => {
+          setInviteOpen(false);
+          const ids = people.map((p) => p.id).filter((pid) => !locked[pid]);
+          if (!ids.length || !userId) return;
+          try {
+            await inviteToEvent(id, userId, ids);
+            showNotice(`Invited ${ids.length} ${ids.length === 1 ? 'person' : 'people'}.`);
+          } catch (e) {
+            showNotice(e instanceof Error ? e.message : 'Could not send the invites.');
+          }
+        }}
+      />
 
       <Dialog
         visible={confirmLeave}
@@ -287,36 +342,16 @@ type GuestProps = {
   onOpenAnswers: () => void;
 };
 
-/** Pinned buttons for guests (design 4c): I'm going · Share, or You're going (menu) · Share. */
-function GuestFooter({
-  social,
-  busy,
-  onRespond,
-  onOpenAnswers,
-  onShare,
-  canShare,
-  onLeave,
-}: GuestProps & { onShare: () => void; canShare: boolean; onLeave: () => void }) {
+/** Pinned button for guests (design 4c): I'm going, or You're going (menu). */
+function GuestFooter({ social, busy, onRespond, onOpenAnswers, onLeave }: GuestProps & { onLeave: () => void }) {
   const status = social.my_status;
   const waitlisted = status === 'yes' && social.my_waitlist_rank > 0;
-  const share = (
-    <IconButton
-      icon={<Icon name={{ ios: 'square.and.arrow.up', android: 'share' }} tone="accent" />}
-      onPress={onShare}
-      accessibilityLabel="Share with friends"
-      variant="outline"
-      disabled={!canShare}
-    />
-  );
 
   if (!social.rsvp_open && status !== 'yes') {
     return (
-      <>
-        <View style={{ flex: 1, justifyContent: 'center' }}>
-          <Text variant="label" tone="muted" align="center">RSVPs for this event have closed</Text>
-        </View>
-        {share}
-      </>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text variant="label" tone="muted" align="center">RSVPs for this event have closed</Text>
+      </View>
     );
   }
 
@@ -335,7 +370,6 @@ function GuestFooter({
           <Button label="I'm going" onPress={() => onRespond('yes')} loading={busy} fullWidth />
         )}
       </View>
-      {share}
     </>
   );
 }

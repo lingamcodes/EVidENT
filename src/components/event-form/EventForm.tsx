@@ -1,25 +1,22 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Share, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 import {
   deleteEvent,
   inviteLink,
-  loadFollowing,
   pickAndUploadCover,
   rsvpByConflict,
   saveEvent,
   validateForPublish,
   type EventForm as Form,
   type FormErrors,
-  type Person,
 } from '@/lib/events';
 import { formatDate } from '@/lib/format';
 import { sizes, spacing } from '@/theme/tokens';
 import { AddTile } from '../AddTile';
 import { Button } from '../Button';
-import { ChoiceMarker } from '../ChoiceMarker';
 import { ChoiceRow } from '../ChoiceRow';
 import { CoverImage } from '../CoverImage';
 import { DateTimeField } from '../DateTimeField';
@@ -27,9 +24,9 @@ import { Dialog } from '../Dialog';
 import { Divider } from '../Divider';
 import { IconButton } from '../IconButton';
 import { Input } from '../Input';
+import { InviteFriendsDialog } from '../InviteFriendsDialog';
 import { OptionCard } from '../OptionCard';
 import { PersonChip } from '../PersonChip';
-import { PersonRow } from '../PersonRow';
 import { QuestionnaireSection } from '../questionnaire/QuestionnaireSection';
 import { Screen } from '../Screen';
 import { Text } from '../Text';
@@ -361,7 +358,7 @@ export function EventForm({ initial }: Props) {
 
       {error && <Text variant="small" tone="danger">{error}</Text>}
 
-      <InviteDialog
+      <InviteFriendsDialog
         visible={inviteOpen}
         userId={userId}
         selected={form.invitees}
@@ -388,66 +385,6 @@ export function EventForm({ initial }: Props) {
   );
 }
 
-/** "Invite friends": search the people you follow and tick who to invite. */
-function InviteDialog({
-  visible,
-  userId,
-  selected,
-  onDone,
-  onClose,
-}: {
-  visible: boolean;
-  userId?: string;
-  selected: Person[];
-  onDone: (people: Person[]) => void;
-  onClose: () => void;
-}) {
-  const [following, setFollowing] = useState<Person[] | null>(null);
-  const [picked, setPicked] = useState<Person[]>(selected);
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (!visible) return;
-    setPicked(selected);
-    setQuery('');
-    if (userId && following === null) loadFollowing(userId).then(setFollowing).catch(() => setFollowing([]));
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const q = query.trim().toLowerCase();
-  const shown = (following ?? []).filter(
-    (p) => !q || p.name.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q),
-  );
-  const isPicked = (id: string) => picked.some((p) => p.id === id);
-  const toggle = (p: Person) => setPicked(isPicked(p.id) ? picked.filter((x) => x.id !== p.id) : [...picked, p]);
-
-  return (
-    <Dialog
-      visible={visible}
-      onClose={onClose}
-      title="Invite friends"
-      actions={<Button label={picked.length ? `Done · ${picked.length}` : 'Done'} onPress={() => onDone(picked)} fullWidth />}
-    >
-      <Input size="sm" value={query} onChangeText={setQuery} placeholder="Search people you follow" autoCapitalize="none" />
-      <ScrollView style={styles.dialogList} contentContainerStyle={styles.stack}>
-        {following === null && <Text variant="small" tone="muted">Loading…</Text>}
-        {following?.length === 0 && (
-          <Text variant="small" tone="muted">You don't follow anyone yet. Share the invite link instead.</Text>
-        )}
-        {shown.map((p) => (
-          <Pressable key={p.id} onPress={() => toggle(p)} accessibilityRole="checkbox" accessibilityState={{ checked: isPicked(p.id) }}>
-            <PersonRow
-              name={p.name}
-              avatarUrl={p.avatar_url}
-              subtitle={p.username ? `@${p.username}` : undefined}
-              action={<ChoiceMarker shape="checkbox" checked={isPicked(p.id)} />}
-            />
-          </Pressable>
-        ))}
-      </ScrollView>
-    </Dialog>
-  );
-}
-
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerSpacer: { width: sizes.iconButton },
@@ -457,5 +394,4 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2 },
   flex: { flex: 1 },
   paxInput: { width: sizes.paxInput },
-  dialogList: { maxHeight: sizes.dialogListMax },
 });

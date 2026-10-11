@@ -92,6 +92,8 @@ events
 
 event_invites              -- who can see/join a private event
   id, event_id (→events), invitee_id (→users), invited_by (→users), created_at
+  -- who may insert (can_invite_to_event): host; confirmed-going guests of PUBLIC
+  --   events; on PRIVATE events with allow_guest_invites, invited/RSVPed guests
   -- invite links: join_event_by_code(code); public preview: get_invite_preview(code)
   --   (title, host, when, where, cover — never guests or media)
 

@@ -168,6 +168,15 @@ const JPEG = Buffer.from(
     check("Rachel (left) can't see the participant list", Array.isArray(rachelList) && rachelList.length === 0, JSON.stringify(rachelList));
     const { data: hostList } = await sundown.rpc('get_event_participants', { p_event_id: EV.kallang });
     check('Host sees the participant list', hostList?.length === 2, JSON.stringify(hostList));
+    const { error: inv1 } = await mei.from('event_invites').insert({ event_id: EV.kallang, invitee_id: ID.kopi, invited_by: ID.mei });
+    check('Mei (going, public event) can invite a friend', !inv1, errMsg(inv1));
+    const { error: dup } = await arjun.from('event_invites').upsert(
+      [{ event_id: EV.kallang, invitee_id: ID.kopi, invited_by: ID.arjun }],
+      { onConflict: 'event_id,invitee_id', ignoreDuplicates: true },
+    );
+    check('Inviting someone already invited is skipped, not an error', !dup, errMsg(dup));
+    const { error: inv2 } = await dev.from('event_invites').insert({ event_id: EV.kallang, invitee_id: ID.hall, invited_by: ID.dev });
+    check("Dev (waitlisted) can't invite to the public event", !!inv2, errMsg(inv2));
     const { data: hostView } = await sundown.from('rsvps').select('user_id, status, waitlist_position').eq('event_id', EV.kallang);
     const going = hostView?.filter((r) => r.status === 'yes' && r.waitlist_position === null).length;
     check('Host sees exactly 2 going (capacity respected)', going === 2, JSON.stringify(hostView));
