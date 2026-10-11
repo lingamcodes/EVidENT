@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 import {
   deleteEvent,
+  googleMapsSearchUrl,
   inviteLink,
   pickAndUploadCover,
   rsvpByConflict,
@@ -22,6 +23,7 @@ import { CoverImage } from '../CoverImage';
 import { DateTimeField } from '../DateTimeField';
 import { Dialog } from '../Dialog';
 import { Divider } from '../Divider';
+import { Icon } from '../Icon';
 import { IconButton } from '../IconButton';
 import { Input } from '../Input';
 import { InviteFriendsDialog } from '../InviteFriendsDialog';
@@ -266,14 +268,25 @@ export function EventForm({ initial }: Props) {
       <View style={styles.stack}>
         <Text variant="eyebrow">Where</Text>
         <Input value={form.location} onChangeText={(v) => set('location', v)} placeholder="Address or place" error={errors.location} />
-        <Input
-          size="sm"
-          value={form.mapLink}
-          onChangeText={(v) => set('mapLink', v)}
-          placeholder="Map or venue link (opens from Directions)"
-          autoCapitalize="none"
-          keyboardType="url"
-        />
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <Input
+              size="sm"
+              value={form.mapLink}
+              onChangeText={(v) => set('mapLink', v)}
+              placeholder="Map or venue link (opens from Directions)"
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+          {/* Find the place in Google Maps, then Share → Copy link and paste it here. */}
+          <IconButton
+            icon={<Icon name={{ ios: 'map', android: 'map' }} tone="accent" />}
+            onPress={() => Linking.openURL(googleMapsSearchUrl(form.location))}
+            accessibilityLabel="Find it in Google Maps"
+            variant="outline"
+          />
+        </View>
       </View>
 
       <Divider />

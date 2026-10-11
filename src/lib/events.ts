@@ -377,6 +377,14 @@ export async function loadEventPage(id: string, viewerId: string): Promise<Event
 }
 
 /** Opens the host's map link, or searches the address in the phone's maps. */
+/** Google Maps (app if installed, else the website), searching for what's typed so far. */
+export function googleMapsSearchUrl(query: string) {
+  const q = query.trim();
+  return q
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
+    : 'https://www.google.com/maps';
+}
+
 export function directionsUrl(page: Pick<EventPage, 'mapLink' | 'location'>) {
   if (page.mapLink) return /^https?:\/\//.test(page.mapLink) ? page.mapLink : `https://${page.mapLink}`;
   if (page.location) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(page.location)}`;
