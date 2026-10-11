@@ -24,7 +24,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { loadMyEvents, parseInviteCode, type MyEvent } from '@/lib/events';
 import { isUnseen, loadFeed, markSeen, verbText, type FeedItem } from '@/lib/feed';
-import { byHost, formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
+import { formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
 import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type FriendGoing, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
 
@@ -315,7 +315,6 @@ export default function HomeScreen() {
                         inviterName={i.inviter_name}
                         inviterAvatarUrl={i.inviter_avatar_url}
                         title={i.title}
-                        host={byHost(i.host_username, i.host_name)}
                         coverUrl={i.cover_image}
                         friendsGoing={i.friends_going_people.map(toFace)}
                         friendsGoingCount={i.friends_going}

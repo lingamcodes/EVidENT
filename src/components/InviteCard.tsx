@@ -13,8 +13,6 @@ type Props = {
   inviterName: string;
   inviterAvatarUrl?: string | null;
   title: string;
-  /** "By @host": who's actually running it (the inviter may just be a guest). */
-  host: string;
   coverUrl?: string | null;
   /** People you follow who are going (up to 3 shown as faces) and how many in total. */
   friendsGoing: { id: string; name: string; avatarUrl?: string | null }[];
@@ -41,7 +39,6 @@ export function InviteCard({
   inviterName,
   inviterAvatarUrl,
   title,
-  host,
   coverUrl,
   friendsGoing,
   friendsGoingCount,
@@ -91,9 +88,6 @@ export function InviteCard({
         ) : (
           <View style={styles.plainHeading}>{heading(false)}</View>
         )}
-        <View style={styles.host}>
-          <Text variant="small" tone="muted" numberOfLines={1}>{host}</Text>
-        </View>
         <View style={styles.details}>
           <View style={styles.flex}>
             <Text variant="eyebrow">When</Text>
@@ -161,8 +155,7 @@ const styles = StyleSheet.create({
   inviterRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   shrink: { flexShrink: 1 },
   flex: { flex: 1, gap: spacing.xxs },
-  host: { paddingTop: spacing.sm, paddingHorizontal: spacing.md + 2 },
-  details: { flexDirection: 'row', gap: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md, paddingHorizontal: spacing.md + 2 },
+  details: { flexDirection: 'row', gap: spacing.lg, paddingVertical: spacing.md, paddingHorizontal: spacing.md + 2 },
   actions: { flexDirection: 'row', borderTopWidth: borders.hairline, borderTopColor: colors.border },
   action: { flex: 1, alignItems: 'center', paddingVertical: spacing.md + 1 },
   actionPressed: { backgroundColor: colors.pressedTint },

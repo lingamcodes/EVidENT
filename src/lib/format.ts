@@ -75,8 +75,3 @@ export function timeAgo(iso: string) {
   if (ms < 2 * DAY) return 'Yesterday';
   return then.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' });
 }
-
-/** Event cards: "By @sundownrunners" (or the name if there's no username yet). */
-export function byHost(username: string | null | undefined, name: string) {
-  return username ? `By @${username}` : `By ${name}`;
-}
