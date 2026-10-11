@@ -156,7 +156,7 @@ export const sizes = {
   tabBarCreate: 42,
   progressBar: 4,
   badgeDot: 8,
-  avatar: { inline: 16, xs: 30, sm: 32, md: 48, lg: 60, xl: 96, xxl: 132 },
+  avatar: { inline: 16, xs: 30, sm: 32, smd: 40, md: 48, lg: 60, xl: 96, xxl: 132 },
   eventCard: { width: 220, imageHeight: 172 },
   /** ScrollPanel 'half' height: this share of the screen height. */
   scrollPanelScreenShare: 0.5,

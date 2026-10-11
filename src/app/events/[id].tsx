@@ -199,7 +199,7 @@ export default function EventScreen() {
           hitSlop={spacing.sm}
           style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
         >
-          <Avatar name={page.host.name} uri={page.host.avatar_url} size="md" />
+          <Avatar name={page.host.name} uri={page.host.avatar_url} size="smd" />
           <Text variant="heading">{page.host.name}</Text>
         </Pressable>
       </View>
