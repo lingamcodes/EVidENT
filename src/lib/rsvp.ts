@@ -59,6 +59,8 @@ export function socialLine(social: EventSocial) {
   return social.going_count ? `${social.going_count} going` : 'Be the first to say yes';
 }
 
+export type FriendGoing = { id: string; name: string; avatar_url: string | null };
+
 export type GoingEvent = {
   event_id: string;
   title: string;
@@ -68,6 +70,9 @@ export type GoingEvent = {
   cover_image: string | null;
   waitlisted: boolean;
   going_count: number;
+  /** People you follow who are going: the count, and up to 3 of them. */
+  friends_going: number;
+  friends_going_people: FriendGoing[];
 };
 
 export async function loadMyGoing(): Promise<GoingEvent[]> {
@@ -87,6 +92,7 @@ export type MyInvite = {
   /** When you were invited — for the unseen-invites badge. */
   invited_at: string;
   friends_going: number;
+  friends_going_people: FriendGoing[];
   has_questions: boolean;
   my_status: RsvpStatus | null;
 };

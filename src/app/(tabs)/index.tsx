@@ -25,10 +25,12 @@ import { useAuth } from '@/lib/auth';
 import { loadMyEvents, parseInviteCode, type MyEvent } from '@/lib/events';
 import { isUnseen, loadFeed, markSeen, verbText, type FeedItem } from '@/lib/feed';
 import { formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
-import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
+import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type FriendGoing, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
 
 type FeedTab = 'friends' | 'invites';
+
+const toFace = (p: FriendGoing) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url });
 
 /** Friends activity shows only the most recent items. */
 const FEED_LIMIT = 15;
@@ -204,6 +206,8 @@ export default function HomeScreen() {
                         meta={[formatWhen(e.date_time), e.location, `${e.going_count} going`].filter(Boolean).join(' · ')}
                         imageUrl={e.cover_image}
                         badge={e.waitlisted ? 'Waitlist' : relativeUntil(e.date_time) ?? undefined}
+                        friends={e.friends_going_people.map(toFace)}
+                        friendsCount={e.friends_going}
                         onPress={() => openEvent(e.event_id)}
                       />
                     ))}
@@ -312,7 +316,8 @@ export default function HomeScreen() {
                         inviterAvatarUrl={i.inviter_avatar_url}
                         title={i.title}
                         coverUrl={i.cover_image}
-                        friendsGoing={i.friends_going}
+                        friendsGoing={i.friends_going_people.map(toFace)}
+                        friendsGoingCount={i.friends_going}
                         when={formatWhen(i.date_time)}
                         where={i.location}
                         status={i.my_status}

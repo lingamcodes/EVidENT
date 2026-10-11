@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { borders, colors, radii, spacing } from '@/theme/tokens';
 import { Avatar } from './Avatar';
+import { AvatarStack } from './AvatarStack';
 import { Button } from './Button';
 import { CoverImage } from './CoverImage';
 import { Text } from './Text';
@@ -13,7 +14,9 @@ type Props = {
   inviterAvatarUrl?: string | null;
   title: string;
   coverUrl?: string | null;
-  friendsGoing: number;
+  /** People you follow who are going (up to 3 shown as faces) and how many in total. */
+  friendsGoing: { id: string; name: string; avatarUrl?: string | null }[];
+  friendsGoingCount: number;
   when: string;
   where?: string | null;
   /** Your reply so far; null = not answered yet (shows Accept / Decline). */
@@ -38,6 +41,7 @@ export function InviteCard({
   title,
   coverUrl,
   friendsGoing,
+  friendsGoingCount,
   when,
   where,
   status,
@@ -47,20 +51,30 @@ export function InviteCard({
   onUndo,
   onPress,
 }: Props) {
-  const friends = friendsGoing ? `${friendsGoing} friend${friendsGoing === 1 ? '' : 's'} going` : null;
+  const moreFriends = friendsGoingCount - friendsGoing.length;
 
+  // Everything flush left: inviter (face the size of the text), title, friends' faces.
   const heading = (onPhoto: boolean) => (
-    <View style={styles.headingRow}>
-      <Avatar name={inviterName} uri={inviterAvatarUrl} size="sm" ringed />
-      <View style={styles.flex}>
-        <Text variant="small" tone={onPhoto ? 'onOverlay' : 'muted'} numberOfLines={1}>
-          {inviterName} invites you to
-        </Text>
-        <Text variant="heading" tone={onPhoto ? 'onOverlay' : 'default'} numberOfLines={2}>
-          {title}
-        </Text>
-        {friends && <Text variant="small" tone={onPhoto ? 'onOverlay' : 'subtle'}>{friends}</Text>}
+    <View style={styles.heading}>
+      <View style={styles.inviterRow}>
+        <Avatar name={inviterName} uri={inviterAvatarUrl} size="inline" />
+        <View style={styles.shrink}>
+          <Text variant="small" tone={onPhoto ? 'onOverlay' : 'muted'} numberOfLines={1}>
+            {inviterName} invites you to
+          </Text>
+        </View>
       </View>
+      <Text variant="heading" tone={onPhoto ? 'onOverlay' : 'default'} numberOfLines={2}>
+        {title}
+      </Text>
+      {friendsGoing.length > 0 && (
+        <AvatarStack
+          people={friendsGoing}
+          size="xs"
+          label={moreFriends > 0 ? `+${moreFriends}` : undefined}
+          tone={onPhoto ? 'onPhoto' : 'default'}
+        />
+      )}
     </View>
   );
 
@@ -137,7 +151,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   plainHeading: { paddingTop: spacing.md + 2, paddingHorizontal: spacing.md + 2 },
-  headingRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  heading: { alignItems: 'flex-start', gap: spacing.xs },
+  inviterRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  shrink: { flexShrink: 1 },
   flex: { flex: 1, gap: spacing.xxs },
   details: { flexDirection: 'row', gap: spacing.lg, paddingVertical: spacing.md, paddingHorizontal: spacing.md + 2 },
   actions: { flexDirection: 'row', borderTopWidth: borders.hairline, borderTopColor: colors.border },
