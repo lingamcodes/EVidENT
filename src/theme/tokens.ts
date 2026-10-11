@@ -141,6 +141,7 @@ export const sizes = {
   questionPhoto: 96,
   icon: 19,
   iconSmall: 16,
+  iconLarge: 28,
   thumb: 56,
   textAreaMinHeight: 90,
   toggle: { width: 38, height: 22, inset: 2 },

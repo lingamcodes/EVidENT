@@ -125,7 +125,7 @@ export function InviteCard({
             accessibilityRole="button"
             style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
           >
-            <Text variant="label" tone="muted">Decline</Text>
+            <Text variant="label" tone="danger">Decline</Text>
           </Pressable>
         </View>
       ) : (

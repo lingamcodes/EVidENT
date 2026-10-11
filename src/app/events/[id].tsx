@@ -99,10 +99,19 @@ export default function EventScreen() {
     }
   };
 
+  const backButton = (
+    <IconButton
+      icon={<Icon name={{ ios: 'chevron.left', android: 'chevron_left' }} size="lg" />}
+      onPress={back}
+      accessibilityLabel="Back"
+      variant="ghost"
+    />
+  );
+
   if (!page) {
     return (
       <Screen>
-        <IconButton icon={<Text variant="heading">‹</Text>} onPress={back} accessibilityLabel="Back" variant="ghost" />
+        {backButton}
         <Text variant="body" tone={error ? 'danger' : 'muted'}>{error ?? 'Loading…'}</Text>
       </Screen>
     );
@@ -154,6 +163,8 @@ export default function EventScreen() {
 
   return (
     <Screen
+      // Back arrow slides away as you scroll down and returns when you scroll up.
+      collapsingHeader={<View style={{ flexDirection: 'row' }}>{backButton}</View>}
       footer={
         page.isHost ? (
           <>
@@ -179,10 +190,6 @@ export default function EventScreen() {
         ) : undefined
       }
     >
-      <View style={{ flexDirection: 'row' }}>
-        <IconButton icon={<Text variant="heading">‹</Text>} onPress={back} accessibilityLabel="Back" variant="ghost" />
-      </View>
-
       {!published && (
         <Card tone="sunken">
           <Text variant="body" tone="strong">Draft — only you can see this. Publish it from Edit event.</Text>

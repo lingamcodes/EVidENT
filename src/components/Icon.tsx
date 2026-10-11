@@ -16,7 +16,7 @@ type Props = {
   /** SF Symbol on iOS, Material Symbol on Android, e.g. { ios: 'bell', android: 'notifications' }. */
   name: SymbolViewProps['name'];
   tone?: Tone;
-  size?: 'md' | 'sm';
+  size?: 'lg' | 'md' | 'sm';
 };
 
 /** App icon (system symbols), coloured from tokens. */
@@ -24,7 +24,7 @@ export function Icon({ name, tone = 'default', size = 'md' }: Props) {
   return (
     <SymbolView
       name={name}
-      size={size === 'md' ? sizes.icon : sizes.iconSmall}
+      size={size === 'lg' ? sizes.iconLarge : size === 'md' ? sizes.icon : sizes.iconSmall}
       tintColor={toneColors[tone]}
     />
   );
