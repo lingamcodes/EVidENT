@@ -35,6 +35,12 @@ Merging to `main` applies migrations automatically; auth settings are manual.
 - [ ] Real App Store / Google Play links on the invite page ("Get the app")
 - [ ] Optional: custom domain (e.g. evident.sg) on Vercel
 
+## Nice-to-have once on a development build
+- [ ] **Share a Google Maps link straight into Evident** (Maps → Share → Evident) and have it
+      auto-fill the venue link on the event form. Needs a share extension (iOS) / share
+      intent filter (Android), e.g. `expo-share-intent` — not possible in Expo Go. Today:
+      the map button beside the venue link opens Maps, then copy + paste the link back.
+
 ## Security settings
 - [ ] Supabase → Authentication → enable **leaked password protection** (flagged by Security Advisor; may need a paid plan)
 - [ ] Supabase → Authentication → set **minimum password length to 8** (the app asks for 8; Supabase defaults to 6)
