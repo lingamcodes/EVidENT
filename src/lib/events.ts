@@ -380,13 +380,13 @@ export function directionsUrl(page: Pick<EventPage, 'mapLink' | 'location'>) {
 
 /* ── Writes ──────────────────────────────────────────────────────────── */
 
-/** Saves event + questionnaire in one transaction, then syncs private invites. Returns the event id. */
+/** Saves event + questionnaire in one transaction, then syncs the host's invites. Returns the event id. */
 export async function saveEvent(form: EventForm, status: 'draft' | 'published', userId: string) {
   const { event, questions } = toPayload(form, status);
   const { data: id, error } = await supabase.rpc('save_event', { p_event: event, p_questions: questions });
   if (error) throw error;
 
-  if (form.visibility === 'private') await syncInvites(id, form.invitees, userId);
+  await syncInvites(id, form.invitees, userId);
   return id;
 }
 

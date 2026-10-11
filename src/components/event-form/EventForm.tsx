@@ -125,6 +125,30 @@ export function EventForm({ initial }: Props) {
   };
   const canShare = !!form.inviteCode && initial.status === 'published';
 
+  // Hosts can pick friends to invite while creating the event (public or private).
+  const inviteFriends = (
+    <>
+      {form.invitees.length > 0 && (
+        <View style={styles.wrap}>
+          {form.invitees.map((p) => (
+            <PersonChip
+              key={p.id}
+              name={p.name}
+              avatarUrl={p.avatar_url}
+              onRemove={() => set('invitees', form.invitees.filter((x) => x.id !== p.id))}
+            />
+          ))}
+        </View>
+      )}
+      <Button
+        label={form.invitees.length ? `Invite friends · ${form.invitees.length}` : 'Invite friends'}
+        variant="secondary"
+        onPress={() => setInviteOpen(true)}
+        fullWidth
+      />
+    </>
+  );
+
   return (
     <Screen
       footer={
@@ -292,27 +316,11 @@ export function EventForm({ initial }: Props) {
               <Text variant="bodyStrong">Unlimited</Text>
             </ChoiceRow>
             {errors.capacity && <Text variant="small" tone="danger">{errors.capacity}</Text>}
+            {inviteFriends}
           </View>
         ) : (
           <View style={styles.stack}>
-            {form.invitees.length > 0 && (
-              <View style={styles.wrap}>
-                {form.invitees.map((p) => (
-                  <PersonChip
-                    key={p.id}
-                    name={p.name}
-                    avatarUrl={p.avatar_url}
-                    onRemove={() => set('invitees', form.invitees.filter((x) => x.id !== p.id))}
-                  />
-                ))}
-              </View>
-            )}
-            <Button
-              label={form.invitees.length ? `Invite friends · ${form.invitees.length}` : 'Invite friends'}
-              variant="secondary"
-              onPress={() => setInviteOpen(true)}
-              fullWidth
-            />
+            {inviteFriends}
             <Button label="Share invite link" variant="outline" onPress={shareInvite} disabled={!canShare} fullWidth />
             {!canShare && (
               <Text variant="small" tone="subtle">Publish first — then anyone with the link can see the event and join.</Text>
@@ -337,6 +345,7 @@ export function EventForm({ initial }: Props) {
               </View>
             )}
             {errors.capacity && <Text variant="small" tone="danger">{errors.capacity}</Text>}
+            {inviteFriends}
           </View>
         )}
       </View>
