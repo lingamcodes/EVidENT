@@ -40,7 +40,14 @@ export function SlidePager({ children, height = 'fill' }: Props) {
             style={[styles.slide, height === 'content' && styles.slideTop, { height: pageHeight }]}
             accessibilityLabel={`${i + 1} of ${slides.length}`}
           >
-            <View onLayout={(e) => height === 'content' && setContentHeight((h) => Math.max(h, Math.ceil(e.nativeEvent.layout.height)))}>
+            <View
+              onLayout={(e) => {
+                if (height !== 'content') return;
+                // Read now: the event object is released before a deferred state update runs.
+                const measured = Math.ceil(e.nativeEvent.layout.height);
+                setContentHeight((h) => Math.max(h, measured));
+              }}
+            >
               {slide}
             </View>
           </View>
