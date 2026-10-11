@@ -11,7 +11,7 @@ type Props = {
   people: Person[];
   /** Shown as "You" instead of their name. */
   meId?: string;
-  /** Comes first in the row (e.g. the "You've invited" box). */
+  /** Comes first in the row (e.g. the Invite tile and the "You've invited" box). */
   leading?: ReactNode;
 };
 
@@ -27,29 +27,30 @@ export function ParticipantGrid({ people, meId, leading }: Props) {
   );
 }
 
-type InvitedProps = {
-  /** People you invited; `dimmed` = not going (yet). */
-  people: (Person & { dimmed?: boolean })[];
-  /** Ends the box with an "Invite" button (when you're allowed to invite). */
-  inviteButton?: ReactNode;
-};
+/** A face-sized button with a caption, e.g. the "Invite" tile. */
+export function ActionTile({ button, label }: { button: ReactNode; label: string }) {
+  return (
+    <View style={styles.tile}>
+      <View style={styles.faceSlot}>{button}</View>
+      <Text variant="small" tone="accent" align="center" numberOfLines={1}>{label}</Text>
+    </View>
+  );
+}
 
-/** "You've invited": a labelled box of the people you invited, plus the Invite button. */
-export function InvitedBox({ people, inviteButton }: InvitedProps) {
+/**
+ * "You've invited": a box around the people you invited, labelled at the side.
+ * It lines up with the rest of the row: faces and names sit at the same height.
+ */
+export function InvitedBox({ people }: { people: (Person & { dimmed?: boolean })[] }) {
+  if (!people.length) return null;
   return (
     <View style={styles.box}>
-      <Text variant="eyebrow">You've invited</Text>
-      <View style={styles.grid}>
-        {people.map((p) => (
-          <PersonTile key={p.id} person={p} dimmed={p.dimmed} />
-        ))}
-        {inviteButton && (
-          <View style={styles.tile}>
-            <View style={styles.faceSlot}>{inviteButton}</View>
-            <Text variant="small" tone="accent" align="center" numberOfLines={1}>Invite</Text>
-          </View>
-        )}
+      <View style={styles.faceSlot}>
+        <Text variant="eyebrow">{"You've\ninvited"}</Text>
       </View>
+      {people.map((p) => (
+        <PersonTile key={p.id} person={p} dimmed={p.dimmed} />
+      ))}
     </View>
   );
 }
@@ -71,9 +72,15 @@ const styles = StyleSheet.create({
   // Same height as a face, so the captions line up.
   faceSlot: { height: sizes.avatar.md, justifyContent: 'center' },
   dimmed: { opacity: opacity.dimmed },
+  // Vertical padding is cancelled by negative margin so the faces stay level with the row.
   box: {
-    gap: spacing.sm,
-    padding: spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: spacing.sm,
+    rowGap: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginVertical: -spacing.xs,
     borderRadius: radii.md,
     borderWidth: borders.hairline,
     borderColor: colors.border,

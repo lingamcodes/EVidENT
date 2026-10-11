@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Linking, ScrollView, Share, View } from 'react-native';
 
 import {
+  ActionTile,
   AvatarStack,
   Button,
   Card,
@@ -123,7 +124,7 @@ export default function EventScreen() {
     ...Object.fromEntries(participants.map((p) => [p.id, 'Going'])),
   };
 
-  // Participants row: [You've invited] · You · friends · everyone else. People you
+  // Participants row: Invite · [You've invited] · You · friends · everyone else. People you
   // invited sit in the box (greyed until they're going), not again in the row.
   const goingIds = new Set(participants.map((p) => p.id));
   const invitedIds = new Set(sentInvites.map((p) => p.id));
@@ -133,7 +134,6 @@ export default function EventScreen() {
     ...others.filter((p) => friendIds.has(p.id)),
     ...others.filter((p) => !friendIds.has(p.id)),
   ].map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }));
-  const showInvitedBox = canInvite || sentInvites.length > 0;
 
   const goingNames = page.going.slice(0, 2).map((p) => p.name.split(' ')[0]);
   const othersGoing = page.going.length - goingNames.length;
@@ -233,7 +233,20 @@ export default function EventScreen() {
                 people={orderedParticipants}
                 meId={userId}
                 leading={
-                  showInvitedBox && (
+                  <>
+                    {canInvite && (
+                      <ActionTile
+                        label="Invite"
+                        button={
+                          <IconButton
+                            icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
+                            onPress={openInvites}
+                            accessibilityLabel="Invite friends"
+                            variant="outline"
+                          />
+                        }
+                      />
+                    )}
                     <InvitedBox
                       people={sentInvites.map((p) => ({
                         id: p.id,
@@ -241,18 +254,8 @@ export default function EventScreen() {
                         avatarUrl: p.avatar_url,
                         dimmed: !goingIds.has(p.id),
                       }))}
-                      inviteButton={
-                        canInvite && (
-                          <IconButton
-                            icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
-                            onPress={openInvites}
-                            accessibilityLabel="Invite friends"
-                            variant="outline"
-                          />
-                        )
-                      }
                     />
-                  )
+                  </>
                 }
               />
             </View>

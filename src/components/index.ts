@@ -38,5 +38,5 @@ export { Toast } from './Toast';
 export { QuestionEditor } from './questionnaire/QuestionEditor';
 export { QuestionnaireSection } from './questionnaire/QuestionnaireSection';
 export * from './questionnaire/types';
-export { InvitedBox, ParticipantGrid } from './ParticipantGrid';
+export { ActionTile, InvitedBox, ParticipantGrid } from './ParticipantGrid';
 export { InviteFriendsDialog } from './InviteFriendsDialog';
