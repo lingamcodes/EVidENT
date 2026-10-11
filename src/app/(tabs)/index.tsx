@@ -102,20 +102,21 @@ export default function HomeScreen() {
   const pendingInvites = invites?.filter((i) => i.my_status === null).length ?? 0;
 
   return (
-    <Screen>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ gap: spacing.xxs }}>
-          <Text variant="eyebrow">{formatLongDate(new Date())}</Text>
-          <Text variant="title">Hey {firstName}</Text>
+    <Screen
+      collapsingHeader={
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ gap: spacing.xxs }}>
+            <Text variant="eyebrow">{formatLongDate(new Date())}</Text>
+            <Text variant="title">Hey {firstName}</Text>
+          </View>
+          <IconButton
+            icon={<Icon name={{ ios: 'bell', android: 'notifications' }} />}
+            onPress={() => router.push('/notifications')}
+            accessibilityLabel="Notifications"
+          />
         </View>
-        <IconButton
-          icon={<Icon name={{ ios: 'bell', android: 'notifications' }} />}
-          onPress={() => router.push('/notifications')}
-          accessibilityLabel="Notifications"
-        />
-      </View>
-
+      }
+    >
       {/* You're going */}
       <View style={{ gap: spacing.sm }}>
         <SectionHeader title="You're going" />

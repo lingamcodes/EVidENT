@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { Dimensions, Keyboard, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Animated, Dimensions, Keyboard, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { borders, colors, layout, spacing } from '@/theme/tokens';
@@ -10,6 +10,11 @@ type Props = {
   scroll?: boolean;
   /** Pinned below the scrolling content, e.g. a Publish / Save bar. */
   footer?: ReactNode;
+  /**
+   * Instagram-style header: slides away as you scroll down and comes back as soon
+   * as you scroll up (always shown at the top of the page).
+   */
+  collapsingHeader?: ReactNode;
 };
 
 /** Lets inputs ask the screen to scroll them above the keyboard. */
@@ -20,8 +25,17 @@ export const useRevealAboveKeyboard = () => useContext(KeyboardRevealContext);
 const KEYBOARD_GAP = spacing.xl;
 
 /** Page wrapper: background, safe area, side gutters, and keeps focused fields above the keyboard. */
-export function Screen({ children, scroll = true, footer }: Props) {
+export function Screen({ children, scroll = true, footer, collapsingHeader }: Props) {
   const scrollRef = useRef<ScrollView>(null);
+  // Collapsing header: hide distance follows scroll, clamped to the header's height,
+  // so any upward scroll starts bringing it back.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerOffset = Animated.diffClamp(
+    scrollY.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolateLeft: 'clamp' }),
+    0,
+    Math.max(headerHeight, 1),
+  ).interpolate({ inputRange: [0, Math.max(headerHeight, 1)], outputRange: [0, -Math.max(headerHeight, 1)] });
   const offsetY = useRef(0);
   const keyboardHeight = useRef(0);
   const pendingField = useRef<View | null>(null);
@@ -65,19 +79,33 @@ export function Screen({ children, scroll = true, footer }: Props) {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {scroll ? (
         <KeyboardRevealContext.Provider value={requestReveal}>
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            automaticallyAdjustKeyboardInsets
-            onScroll={(e) => {
-              offsetY.current = e.nativeEvent.contentOffset.y;
-            }}
-            scrollEventThrottle={16}
-          >
-            {children}
-          </ScrollView>
+          {/* Starts below the status bar and clips the header as it slides up. */}
+          <View style={styles.scrollArea}>
+            <Animated.ScrollView
+              ref={scrollRef}
+              contentContainerStyle={[styles.content, collapsingHeader ? { paddingTop: headerHeight + spacing.lg } : null]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets
+              onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+                useNativeDriver: true,
+                listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+                  offsetY.current = e.nativeEvent.contentOffset.y;
+                },
+              })}
+              scrollEventThrottle={16}
+            >
+              {children}
+            </Animated.ScrollView>
+            {collapsingHeader && (
+              <Animated.View
+                style={[styles.collapsingHeader, { transform: [{ translateY: headerOffset }] }]}
+                onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+              >
+                {collapsingHeader}
+              </Animated.View>
+            )}
+          </View>
         </KeyboardRevealContext.Provider>
       ) : (
         <View style={[styles.content, styles.fill]}>{children}</View>
@@ -91,6 +119,17 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: layout.screenGutter, paddingVertical: spacing.lg, gap: spacing.xl },
   fill: { flex: 1 },
+  scrollArea: { flex: 1, overflow: 'hidden' },
+  collapsingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
   footer: {
     flexDirection: 'row',
     gap: spacing.sm,
