@@ -211,20 +211,25 @@ export default function EventScreen() {
           {participants.length > 0 ? (
             // You're going: see everyone who's going.
             <View style={{ gap: spacing.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
-                {canInvite && (
-                  <IconButton
-                    icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
-                    onPress={openInvites}
-                    accessibilityLabel="Invite friends"
-                    variant="outline"
-                  />
-                )}
-              </View>
+              <Text variant="eyebrow">{`Going · ${participants.length}`}</Text>
               <ParticipantGrid
                 people={participants.map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatar_url }))}
                 meId={userId}
+                trailing={
+                  canInvite
+                    ? {
+                        label: 'Invite',
+                        node: (
+                          <IconButton
+                            icon={<Icon name={{ ios: 'person.badge.plus', android: 'person_add' }} tone="accent" />}
+                            onPress={openInvites}
+                            accessibilityLabel="Invite friends"
+                            variant="outline"
+                          />
+                        ),
+                      }
+                    : undefined
+                }
               />
             </View>
           ) : (
