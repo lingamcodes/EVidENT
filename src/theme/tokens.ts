@@ -232,7 +232,7 @@ export const typography = {
   tab: { fontFamily: fonts.bodyBold, fontSize: 12.5 },
   tabLarge: { fontFamily: fonts.bodyBold, fontSize: 16 },
   badgeCount: { fontFamily: fonts.bodyBold, fontSize: 11 },
-  label: { fontFamily: fonts.bodySemiBold, fontSize: 12.5 },
+  label: { fontFamily: fonts.bodyBold, fontSize: 14 },
   small: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
   caption: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
   meta: { fontFamily: fonts.body, fontSize: 10.5, lineHeight: 14 },
