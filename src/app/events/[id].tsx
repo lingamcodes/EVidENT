@@ -199,8 +199,8 @@ export default function EventScreen() {
           hitSlop={spacing.sm}
           style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
         >
-          <Avatar name={page.host.name} uri={page.host.avatar_url} size="xs" />
-          <Text variant="bodyStrong">By {page.host.name}</Text>
+          <Avatar name={page.host.name} uri={page.host.avatar_url} size="md" />
+          <Text variant="heading">{page.host.name}</Text>
         </Pressable>
       </View>
       {page.coverUrl && <CoverImage uri={page.coverUrl} accessibilityLabel="Event cover" />}
