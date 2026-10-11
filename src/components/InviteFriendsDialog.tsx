@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
-import { loadFollowing, type Person } from '@/lib/events';
+import { loadFriends, type Person } from '@/lib/events';
 import { opacity, sizes, spacing } from '@/theme/tokens';
 import { Button } from './Button';
 import { ChoiceMarker } from './ChoiceMarker';
@@ -33,7 +33,7 @@ export function InviteFriendsDialog({ visible, userId, selected, onDone, onClose
     if (!visible) return;
     setPicked(selected);
     setQuery('');
-    if (userId && following === null) loadFollowing(userId).then(setFollowing).catch(() => setFollowing([]));
+    if (userId && following === null) loadFriends(userId).then(setFollowing).catch(() => setFollowing([]));
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = query.trim().toLowerCase();

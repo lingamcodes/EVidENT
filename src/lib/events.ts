@@ -256,14 +256,18 @@ export async function loadMyEvents(userId: string): Promise<MyEvent[]> {
   }));
 }
 
-/** People the user follows — who they can invite to private events. */
-export async function loadFollowing(userId: string): Promise<Person[]> {
+/** Friends you can invite: people you follow, not organisations. */
+export async function loadFriends(userId: string): Promise<Person[]> {
   const { data, error } = await supabase
     .from('follows')
-    .select('users!follows_target_id_fkey(id, name, username, avatar_url)')
-    .eq('follower_id', userId);
+    .select('users!follows_target_id_fkey!inner(id, name, username, avatar_url, account_type)')
+    .eq('follower_id', userId)
+    .eq('users.account_type', 'individual');
   if (error) throw error;
-  return (data ?? []).map((r) => r.users).filter((u): u is Person => !!u);
+  return (data ?? [])
+    .map((r) => r.users)
+    .filter((u): u is NonNullable<typeof u> => !!u)
+    .map(({ id, name, username, avatar_url }) => ({ id, name, username, avatar_url }));
 }
 
 /** People you've already invited to an event (you can only see your own invites as a guest). */

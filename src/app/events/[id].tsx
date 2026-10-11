@@ -111,7 +111,7 @@ export default function EventScreen() {
   const spotsLeft = page.capacity === null ? null : Math.max(0, page.capacity - (social?.going_count ?? 0));
   const capacityLine =
     spotsLeft === null
-      ? `No limit — ${social?.going_count ?? 0} going so far.`
+      ? 'No Limit'
       : `Max ${page.capacity} people · ${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left. Anyone past that joins the waitlist.`;
   const locked: Record<string, string> = {
     ...Object.fromEntries(sentInvites.map((pid) => [pid, 'Invited'])),

@@ -243,6 +243,14 @@ const JPEG = Buffer.from(
     check("Rachel's feed never shows private events she isn't invited to", !feedR?.some((f) => f.target === 'Kopi + cards night'));
     const { data: feedD } = await dev.rpc('get_home_feed', { p_limit: 30 });
     check('Feed returns at most the requested number of items', (feedD?.length ?? 0) <= 30);
+    // Same query as loadFriends(): the invite popup's friend list.
+    const { data: friends } = await rachel
+      .from('follows')
+      .select('users!follows_target_id_fkey!inner(id, account_type)')
+      .eq('follower_id', ID.rachel)
+      .eq('users.account_type', 'individual');
+    const friendIds = (friends ?? []).map((r) => r.users?.id);
+    check('Invite friend list: Rachel sees Dev but not Sundown (an org)', friendIds.includes(ID.dev) && !friendIds.includes(ID.sundown), JSON.stringify(friendIds));
   }
 
   // ── Storage ──────────────────────────────────────────────────────────
