@@ -155,7 +155,7 @@ export const sizes = {
   progressBar: 4,
   badgeDot: 8,
   avatar: { xs: 30, sm: 32, md: 48, lg: 60, xl: 96, xxl: 132 },
-  eventCard: { width: 252, imageHeight: 172 },
+  eventCard: { width: 300, imageHeight: 172 },
 } as const;
 
 export const borders = {
