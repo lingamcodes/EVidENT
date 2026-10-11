@@ -155,6 +155,8 @@ export const sizes = {
   badgeDot: 8,
   avatar: { xs: 30, sm: 32, md: 48, lg: 60, xl: 96, xxl: 132 },
   eventCard: { width: 220, imageHeight: 172 },
+  /** Home's Friends / Invites box: this share of the screen height, scrolling inside. */
+  scrollPanelScreenShare: 0.5,
 } as const;
 
 export const borders = {

@@ -23,6 +23,7 @@ export { OptionCard } from './OptionCard';
 export { PersonChip } from './PersonChip';
 export { PersonRow } from './PersonRow';
 export { Screen } from './Screen';
+export { ScrollPanel } from './ScrollPanel';
 export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';
 export { StepProgress } from './StepProgress';
