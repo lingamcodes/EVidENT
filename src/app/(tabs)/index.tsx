@@ -203,7 +203,6 @@ export default function HomeScreen() {
                         key={e.event_id}
                         width={cardWidth}
                         title={e.title}
-                        host={byHost(e.host_username, e.host_name)}
                         meta={[formatWhen(e.date_time), e.location, `${e.going_count} going`].filter(Boolean).join(' · ')}
                         imageUrl={e.cover_image}
                         badge={e.waitlisted ? 'Waitlist' : relativeUntil(e.date_time) ?? undefined}
@@ -231,7 +230,6 @@ export default function HomeScreen() {
                         key={e.id}
                         width={cardWidth}
                         title={e.title}
-                        host={byHost(profile?.username, profile?.name ?? '')}
                         meta={
                           e.status === 'draft'
                             ? [formatWhen(e.date_time), 'Draft'].join(' · ')

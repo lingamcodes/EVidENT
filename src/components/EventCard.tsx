@@ -8,8 +8,6 @@ import { Text } from './Text';
 
 type Props = {
   title: string;
-  /** "By @host", right under the photo. */
-  host?: string;
   meta: string;
   imageUrl?: string | null;
   badge?: string;
@@ -26,12 +24,12 @@ type Props = {
 };
 
 /** Photo-topped event card used in the "You're going" / "Your events" carousels. */
-export function EventCard({ title, host, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false, width, friends = [], friendsCount = friends.length }: Props) {
+export function EventCard({ title, meta, imageUrl, badge, actionLabel, onAction, onPress, dimmed = false, width, friends = [], friendsCount = friends.length }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={[title, host, meta].filter(Boolean).join('. ')}
+      accessibilityLabel={`${title}. ${meta}`}
       style={({ pressed }) => [styles.card, width !== undefined && { width }, pressed && styles.pressed]}
     >
       {/* Standard square cover so carousels line up. */}
@@ -55,7 +53,6 @@ export function EventCard({ title, host, meta, imageUrl, badge, actionLabel, onA
         )}
       </CoverImage>
       <View style={[styles.body, dimmed && styles.dimText]}>
-        {host && <Text variant="meta" tone="muted" numberOfLines={1}>{host}</Text>}
         <Text variant="cardTitle" numberOfLines={1}>{title}</Text>
         <Text variant="meta" numberOfLines={1}>{meta}</Text>
       </View>
