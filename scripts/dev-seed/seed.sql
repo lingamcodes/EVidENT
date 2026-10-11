@@ -166,7 +166,9 @@ begin
     insert into public.event_invites (event_id, invitee_id, invited_by) values
       (e_kopi, me, kopi),
       (e_supper, me, rachel),
-      (e_concert, me, hall)
+      (e_concert, me, hall),
+      -- Invited by a guest, not the host: Rachel is going to Sundown's 5k
+      (e_5k, me, rachel)
     on conflict do nothing;
 
     -- Fake guests on the real account's newest published event

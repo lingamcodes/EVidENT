@@ -24,7 +24,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { loadMyEvents, parseInviteCode, type MyEvent } from '@/lib/events';
 import { isUnseen, loadFeed, markSeen, verbText, type FeedItem } from '@/lib/feed';
-import { formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
+import { byHost, formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
 import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type FriendGoing, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
 
@@ -203,6 +203,7 @@ export default function HomeScreen() {
                         key={e.event_id}
                         width={cardWidth}
                         title={e.title}
+                        host={byHost(e.host_username, e.host_name)}
                         meta={[formatWhen(e.date_time), e.location, `${e.going_count} going`].filter(Boolean).join(' · ')}
                         imageUrl={e.cover_image}
                         badge={e.waitlisted ? 'Waitlist' : relativeUntil(e.date_time) ?? undefined}
@@ -230,6 +231,7 @@ export default function HomeScreen() {
                         key={e.id}
                         width={cardWidth}
                         title={e.title}
+                        host={byHost(profile?.username, profile?.name ?? '')}
                         meta={
                           e.status === 'draft'
                             ? [formatWhen(e.date_time), 'Draft'].join(' · ')
@@ -315,6 +317,7 @@ export default function HomeScreen() {
                         inviterName={i.inviter_name}
                         inviterAvatarUrl={i.inviter_avatar_url}
                         title={i.title}
+                        host={byHost(i.host_username, i.host_name)}
                         coverUrl={i.cover_image}
                         friendsGoing={i.friends_going_people.map(toFace)}
                         friendsGoingCount={i.friends_going}
