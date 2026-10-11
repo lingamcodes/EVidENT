@@ -98,8 +98,6 @@ export const colors = {
   dashedBorder: palette.clay400,
 
   overlay: 'rgba(32, 30, 29, 0.72)',
-  /** Translucent page background for floating bars (stuck tabs). */
-  floatingBar: 'rgba(245, 234, 216, 0.94)',
   scrim: 'rgba(46, 43, 37, 0.5)',
   pressedTint: 'rgba(32, 30, 29, 0.14)',
   pressedAccentTint: 'rgba(198, 113, 57, 0.18)',
