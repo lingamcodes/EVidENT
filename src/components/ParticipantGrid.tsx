@@ -11,7 +11,7 @@ type Props = {
   people: Person[];
   /** Shown as "You" instead of their name. */
   meId?: string;
-  /** Comes first in the row (e.g. the Invite tile and the "You've invited" box). */
+  /** Comes first in the row (e.g. the box of people you invited). */
   leading?: ReactNode;
 };
 
@@ -38,16 +38,21 @@ export function ActionTile({ button, label }: { button: ReactNode; label: string
 }
 
 /**
- * "You've invited": a box around the people you invited, labelled at the side.
- * It lines up with the rest of the row: faces and names sit at the same height.
+ * The people you invited, grouped in a box together with the Invite button (when
+ * given). With nobody invited yet it's just the button, no box. The box lines up
+ * with the rest of the row: faces and names sit at the same height.
  */
-export function InvitedBox({ people }: { people: (Person & { dimmed?: boolean })[] }) {
-  if (!people.length) return null;
+export function InvitedBox({
+  people,
+  inviteButton,
+}: {
+  people: (Person & { dimmed?: boolean })[];
+  inviteButton?: ReactNode;
+}) {
+  if (!people.length) return inviteButton ? <>{inviteButton}</> : null;
   return (
     <View style={styles.box}>
-      <View style={styles.faceSlot}>
-        <Text variant="eyebrow">{"You've\ninvited"}</Text>
-      </View>
+      {inviteButton}
       {people.map((p) => (
         <PersonTile key={p.id} person={p} dimmed={p.dimmed} />
       ))}
