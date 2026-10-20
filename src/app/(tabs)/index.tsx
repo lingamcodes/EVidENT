@@ -406,6 +406,7 @@ export default function HomeScreen() {
                         friendsGoingCount={i.friends_going}
                         when={formatWhen(i.date_time)}
                         where={i.location}
+                        rsvpBy={i.rsvp_by}
                         status={i.my_status}
                         busy={busyInvite === i.event_id}
                         onAccept={() => reply(i, 'yes')}

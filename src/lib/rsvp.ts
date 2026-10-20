@@ -98,6 +98,8 @@ export type MyInvite = {
   cover_image: string | null;
   inviter_name: string;
   inviter_avatar_url: string | null;
+  /** RSVP deadline, if the host set one. */
+  rsvp_by: string | null;
   host_name: string;
   host_username: string | null;
   /** When you were invited — for the unseen-invites badge. */

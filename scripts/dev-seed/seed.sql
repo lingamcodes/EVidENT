@@ -162,6 +162,11 @@ begin
       (dev, me, now() - interval '5 days')
     on conflict do nothing;
 
+    -- RSVP deadlines for the invite-card banner: the concert closes in ~20 hours
+    -- (urgent), the 5k in ~1.5 days.
+    update public.events set rsvp_by = now() + interval '20 hours' where id = e_concert;
+    update public.events set rsvp_by = now() + interval '36 hours' where id = e_5k;
+
     -- Invites waiting on Home → Invites
     insert into public.event_invites (event_id, invitee_id, invited_by) values
       (e_kopi, me, kopi),
@@ -183,6 +188,30 @@ begin
       insert into public.event_invites (event_id, invitee_id, invited_by)
         values (my_event, mei, me), (my_event, rachel, me)
       on conflict do nothing;
+
+      -- Their questionnaire answers, so the host's Responses screen has data:
+      -- Rachel picks an allergy option if there is one (detail "Peanuts"), else the
+      -- first option; Arjun picks the last option. Diet/allergy questions are marked
+      -- important so the "Needs attention" flag shows.
+      update public.event_questions set important = true
+        where event_id = my_event and text ~* 'diet|allerg';
+      insert into public.rsvp_answers (rsvp_id, question_id, option_id, text_answer)
+      select r.id, q.id, o.id, case when o.label ~* 'allerg' then 'Peanuts' end
+      from public.rsvps r
+      join public.event_questions q on q.event_id = r.event_id and q.type in ('mc', 'check')
+      join lateral (
+        select oo.id, oo.label from public.event_question_options oo
+        where oo.question_id = q.id
+        order by case when r.user_id = rachel then (oo.label ~* 'allerg')::int else 0 end desc,
+                 case when r.user_id = rachel then oo.position else -oo.position end
+        limit 1
+      ) o on true
+      where r.event_id = my_event and r.status = 'yes';
+      insert into public.rsvp_answers (rsvp_id, question_id, option_id, text_answer)
+      select r.id, q.id, null, case when r.user_id = rachel then 'Can bring a speaker' else 'Nil' end
+      from public.rsvps r
+      join public.event_questions q on q.event_id = r.event_id and q.type = 'short'
+      where r.event_id = my_event and r.status = 'yes';
     end if;
   end if;
 end $$;

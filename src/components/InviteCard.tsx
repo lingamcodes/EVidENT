@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { rsvpDeadline } from '@/lib/format';
 import { borders, colors, radii, spacing } from '@/theme/tokens';
 import { Avatar } from './Avatar';
 import { AvatarStack } from './AvatarStack';
@@ -19,6 +20,8 @@ type Props = {
   friendsGoingCount: number;
   when: string;
   where?: string | null;
+  /** RSVP deadline: shown as a banner across the top with a countdown. */
+  rsvpBy?: string | null;
   /** Your reply so far; null = not answered yet (shows Accept / Decline). */
   status: Status;
   busy?: boolean;
@@ -44,6 +47,7 @@ export function InviteCard({
   friendsGoingCount,
   when,
   where,
+  rsvpBy,
   status,
   busy = false,
   onAccept,
@@ -52,6 +56,7 @@ export function InviteCard({
   onPress,
 }: Props) {
   const moreFriends = friendsGoingCount - friendsGoing.length;
+  const deadline = rsvpBy ? rsvpDeadline(rsvpBy) : null;
 
   // Everything flush left: inviter (face the size of the text), title, friends' faces.
   const heading = (onPhoto: boolean) => (
@@ -80,6 +85,13 @@ export function InviteCard({
 
   return (
     <View style={styles.card}>
+      {deadline && (
+        <View style={[styles.deadline, deadline.urgent && styles.deadlineUrgent, deadline.closed && styles.deadlineClosed]}>
+          <Text variant="small" tone={deadline.closed ? 'muted' : deadline.urgent ? 'danger' : 'accent'} numberOfLines={1}>
+            {deadline.label}
+          </Text>
+        </View>
+      )}
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${inviterName} invites you to ${title}`}>
         {coverUrl ? (
           <CoverImage uri={coverUrl} rounded={false}>
@@ -102,7 +114,11 @@ export function InviteCard({
         </View>
       </Pressable>
 
-      {status === null ? (
+      {status === null && deadline?.closed ? (
+        <View style={[styles.actions, styles.result]}>
+          <Text variant="label" tone="muted">RSVPs have closed</Text>
+        </View>
+      ) : status === null ? (
         <View style={styles.actions}>
           <Pressable
             onPress={onAccept}
@@ -133,6 +149,9 @@ export function InviteCard({
 }
 
 const styles = StyleSheet.create({
+  deadline: { paddingVertical: spacing.xs + 2, paddingHorizontal: spacing.md + 2, backgroundColor: colors.accentSoft },
+  deadlineUrgent: { backgroundColor: colors.dangerSoft },
+  deadlineClosed: { backgroundColor: colors.surfaceSunken },
   card: {
     borderRadius: radii.lg,
     overflow: 'hidden',

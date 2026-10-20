@@ -132,7 +132,10 @@ seen_items                 -- Home badges: items viewed since the watermark (own
 
 event_questions            -- RSVP questionnaire (host-defined)
   id, event_id (→events), position, text,
-  type ('short' | 'mc' | 'check'), image_url, created_at
+  type ('short' | 'mc' | 'check'), image_url, important, created_at
+  -- important: host wants answers flagged ("Needs attention") on the host-only
+  --   Responses screen (/events/[id]/responses: summary, by guest, text/CSV export;
+  --   logic in src/lib/responses.ts — "nil/none/N/A" answers don't flag)
 
 event_question_options
   id, question_id (→event_questions), position, label
@@ -171,8 +174,8 @@ One-time CLI setup: `npx supabase login`, then
   Scripts in `scripts/dev-seed/`. Never run against prod.
 - Regression test (dev only): `npm run test:dev` signs in as each fake account
   and exercises privacy, private events/invites, questionnaire RSVPs,
-  capacity/waitlist, deadlines, editing, feed and storage through the real API
-  (~60 checks). Resets the fake data before and after; refuses to run unless
+  capacity/waitlist, deadlines, editing, feed, badges, guest invites, host
+  responses and storage through the real API (~100 checks). Resets the fake data before and after; refuses to run unless
   `.env.local` points at the linked dev project. Run it after any migration.
 
 ## Styling conventions

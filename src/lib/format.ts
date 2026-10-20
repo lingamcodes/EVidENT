@@ -75,3 +75,14 @@ export function timeAgo(iso: string) {
   if (ms < 2 * DAY) return 'Yesterday';
   return then.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' });
 }
+
+/**
+ * Invite cards' RSVP-by banner: "RSVP by Sat 25 Oct · 6.00pm · closes in 2 days".
+ * `urgent` = under a day left; `closed` = the deadline has passed.
+ */
+export function rsvpDeadline(iso: string) {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return { label: 'RSVPs closed', urgent: false, closed: true };
+  const countdown = (relativeUntil(iso) ?? '').replace(/^in /, 'closes in ');
+  return { label: `RSVP by ${formatWhen(iso)} · ${countdown}`, urgent: ms < DAY, closed: false };
+}

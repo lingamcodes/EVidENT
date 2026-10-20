@@ -39,7 +39,7 @@ export type GuestResponse = {
 export type EventResponses = { questions: ResponseQuestion[]; guests: GuestResponse[] };
 
 /** Answers like these mean "nothing to flag". */
-const NOTHING = /^(nil|none|no|nope|n\.?\s?a\.?|-+|nothing|not applicable|no allerg(y|ies))$/i;
+const NOTHING = /^(nil|none|no|nope|n\s?[/.]?\s?a\.?|-+|nothing|not applicable|no allerg(y|ies))$/i;
 const meaningful = (s: string | null | undefined) => !!s && !!s.trim() && !NOTHING.test(s.trim());
 
 /** Readable answer: "Allergies (peanuts)", "S", "6:30/km"… */

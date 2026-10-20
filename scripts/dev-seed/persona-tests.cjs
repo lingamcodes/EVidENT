@@ -340,6 +340,49 @@ const JPEG = Buffer.from(
     check("Participant list never includes 'maybe' replies (Mei on the 5k)", !plist?.some((p) => p.id === ID.mei), JSON.stringify(plist));
   }
 
+  // ── Host responses ───────────────────────────────────────────────────
+  section = 'Host responses';
+  {
+    // The exact query the Responses screen runs (src/lib/responses.ts).
+    const { data: rows, error: rErr } = await kopi
+      .from('rsvps')
+      .select('created_at, waitlist_position, user:users!rsvps_user_id_fkey(id, name, username, avatar_url), rsvp_answers(question_id, option_id, text_answer)')
+      .eq('event_id', EV.kopi)
+      .eq('status', 'yes');
+    const meiRow = rows?.find((r) => r.user?.id === ID.mei);
+    check("Host's Responses query returns each guest with their answers", !rErr && meiRow?.rsvp_answers?.some((a) => a.text_answer === 'Peanuts'), errMsg(rErr) || JSON.stringify(rows));
+    const { data: devSees } = await dev.from('rsvps')
+      .select('user_id, rsvp_answers(text_answer)').eq('event_id', EV.kopi).eq('status', 'yes');
+    check("A guest running the same query sees only their own answers", devSees?.every((r) => r.user_id === ID.dev), JSON.stringify(devSees));
+    const { data: qs } = await kopi.from('event_questions').select('id, important').eq('event_id', EV.kopi);
+    check('Questions carry the Important flag (off by default)', qs?.length && qs.every((q) => q.important === false), JSON.stringify(qs));
+
+    const { data: newId, error: saveErr } = await rachel.rpc('save_event', {
+      p_event: { title: 'Responses test', status: 'draft', visibility: 'public' },
+      p_questions: [
+        { text: 'Allergies?', type: 'short', important: true, options: [] },
+        { text: 'Shirt size', type: 'mc', options: [{ label: 'S' }, { label: 'M' }] },
+      ],
+    });
+    const { data: saved } = await rachel.from('event_questions').select('text, important').eq('event_id', newId).order('position');
+    check('Host marks a question Important and it saves', !saveErr && saved?.[0]?.important === true && saved?.[1]?.important === false, errMsg(saveErr) || JSON.stringify(saved));
+    const { data: qid } = await rachel.from('event_questions').select('id').eq('event_id', newId).eq('position', 1).single();
+    await rachel.rpc('save_event', {
+      p_event: { id: newId, title: 'Responses test', status: 'draft', visibility: 'public' },
+      p_questions: [{ id: qid?.id, text: 'Shirt size', type: 'mc', important: true, options: [{ label: 'S' }] }],
+    });
+    const { data: edited } = await rachel.from('event_questions').select('text, important').eq('event_id', newId);
+    check('Editing an event updates the flag (and drops removed questions)', edited?.length === 1 && edited[0].important === true, JSON.stringify(edited));
+    await rachel.from('events').delete().eq('id', newId);
+
+    // RSVP-by on invite cards
+    const closes = new Date(Date.now() + 26 * 3600e3).toISOString();
+    await rachel.from('events').update({ rsvp_by: closes }).eq('id', EV.supper);
+    const { data: meiInv } = await mei.rpc('get_my_invites');
+    const sup = meiInv?.find((i) => i.event_id === EV.supper);
+    check('Invites include the RSVP-by deadline (for the banner)', sup && new Date(sup.rsvp_by).getTime() === new Date(closes).getTime(), JSON.stringify(sup?.rsvp_by));
+  }
+
   // ── Storage ──────────────────────────────────────────────────────────
   section = 'Storage';
   {
