@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -459,6 +459,35 @@ export type Database = {
           },
           {
             foreignKeyName: "rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seen_items: {
+        Row: {
+          item_key: string
+          kind: string
+          seen_at: string
+          user_id: string
+        }
+        Insert: {
+          item_key: string
+          kind: string
+          seen_at?: string
+          user_id?: string
+        }
+        Update: {
+          item_key?: string
+          kind?: string
+          seen_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seen_items_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

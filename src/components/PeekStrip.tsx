@@ -1,23 +1,31 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { borders, colors, sizes, spacing } from '@/theme/tokens';
+import { CountBadge } from './CountBadge';
 import { Text } from './Text';
 
 type Props = {
   label: string;
   onPress: () => void;
+  /** 'up' = back to the section above (sits at the top); 'down' = on to the section below (sits at the bottom). */
+  direction?: 'up' | 'down';
+  /** Red count of unseen items in the section it leads to. */
+  badge?: number;
 };
 
-/** Thin full-width bar ("⌃ Your events · 3 upcoming") that jumps back to the section above. */
-export function PeekStrip({ label, onPress }: Props) {
+/** Thin full-width bar ("⌃ Your events · 3 upcoming" / "⌄ See Friends · Invites") that jumps between sections. */
+export function PeekStrip({ label, onPress, direction = 'up', badge = 0 }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Back to ${label}`}
-      style={({ pressed }) => [styles.strip, pressed && styles.pressed]}
+      accessibilityLabel={badge ? `${label}, ${badge} new` : label}
+      style={({ pressed }) => [styles.strip, direction === 'up' ? styles.up : styles.down, pressed && styles.pressed]}
     >
-      <Text variant="label" tone="muted">⌃  {label}</Text>
+      <View style={styles.row}>
+        <Text variant="label" tone="muted">{`${direction === 'up' ? '⌃' : '⌄'}  ${label}`}</Text>
+        <CountBadge count={badge} />
+      </View>
     </Pressable>
   );
 }
@@ -29,8 +37,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     backgroundColor: colors.background,
-    borderBottomWidth: borders.hairline,
-    borderBottomColor: colors.border,
   },
+  up: { borderBottomWidth: borders.hairline, borderBottomColor: colors.border },
+  down: { borderTopWidth: borders.hairline, borderTopColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 1 },
   pressed: { backgroundColor: colors.surfaceSunken },
 });

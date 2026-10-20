@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useRef } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { borders, colors, opacity, radii, shadows, spacing } from '@/theme/tokens';
 import { Text } from './Text';
@@ -20,6 +21,14 @@ type Props = {
 /** A small list of options that opens from a button over a darkened screen; tapping outside closes it. */
 export function DropdownMenu({ visible, onClose, anchor, items, direction = 'down' }: Props) {
   const { height: screenHeight } = useWindowDimensions();
+  // The chosen action runs only once the menu has fully closed: iOS won't open
+  // another popup (e.g. "Leave this event?") while this one is still closing.
+  const pending = useRef<(() => void) | null>(null);
+  const runPending = () => {
+    const action = pending.current;
+    pending.current = null;
+    action?.();
+  };
   if (!anchor) return null;
 
   const position =
@@ -28,15 +37,16 @@ export function DropdownMenu({ visible, onClose, anchor, items, direction = 'dow
       : { top: anchor.y + anchor.height + spacing.xs, left: anchor.x, minWidth: anchor.width };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={runPending}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
         <View style={[styles.menu, position]} accessibilityRole="menu">
           {items.map((item, i) => (
             <Pressable
               key={item.label}
               onPress={() => {
+                pending.current = item.onPress;
                 onClose();
-                item.onPress();
+                if (Platform.OS !== 'ios') setTimeout(runPending, 0);
               }}
               disabled={item.disabled}
               accessibilityRole="menuitem"

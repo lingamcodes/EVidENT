@@ -127,6 +127,15 @@ export function EventForm({ initial }: Props) {
   };
   const canShare = !!form.inviteCode && initial.status === 'published';
 
+  // Pickers can't go out of order: on the same day, the end time starts after the
+  // start time and the RSVP-by time stops at the start time.
+  const sameDay = (a: Date | null, b: Date | null) => !!a && !!b && a.toDateString() === b.toDateString();
+  const endTimeMin =
+    form.startTime && (!form.multiDay || !form.endDate || sameDay(form.endDate, form.startDate))
+      ? new Date(form.startTime.getTime() + 60_000)
+      : undefined;
+  const rsvpTimeMax = form.startTime && sameDay(form.rsvpByDate, form.startDate) ? form.startTime : undefined;
+
   // Hosts can pick friends to invite while creating the event (public or private).
   const inviteFriends = (
     <>
@@ -222,7 +231,13 @@ export function EventForm({ initial }: Props) {
           </View>
           <Text variant="label" tone="subtle">—</Text>
           <View style={styles.flex}>
-            <DateTimeField mode="time" value={form.endTime} onChange={(d) => set('endTime', d)} placeholder="Ends" />
+            <DateTimeField
+              mode="time"
+              value={form.endTime}
+              onChange={(d) => set('endTime', d)}
+              placeholder="Ends"
+              minimumDate={endTimeMin}
+            />
           </View>
         </View>
         {(errors.start || errors.end) && <Text variant="small" tone="danger">{errors.start ?? errors.end}</Text>}
@@ -250,7 +265,14 @@ export function EventForm({ initial }: Props) {
                 />
               </View>
               <View style={styles.flex}>
-                <DateTimeField mode="time" value={form.rsvpByTime} onChange={(d) => set('rsvpByTime', d)} placeholder="Time" size="sm" />
+                <DateTimeField
+                  mode="time"
+                  value={form.rsvpByTime}
+                  onChange={(d) => set('rsvpByTime', d)}
+                  placeholder="Time"
+                  size="sm"
+                  maximumDate={rsvpTimeMax}
+                />
               </View>
             </View>
             <Text variant="small" tone={errors.rsvpBy ? 'danger' : 'subtle'}>

@@ -25,8 +25,8 @@ export default function WelcomeScreen() {
       <Divider label="or" />
 
       <View style={{ gap: spacing.sm }}>
-        <Button label="Sign up with email" onPress={() => router.push('/sign-up')} fullWidth />
-        <Button label="I already have an account" variant="ghost" onPress={() => router.push('/log-in')} fullWidth />
+        <Button label="Sign in" onPress={() => router.push('/log-in')} fullWidth />
+        <Button label="New here? Sign up with email" variant="ghost" onPress={() => router.push('/sign-up')} fullWidth />
       </View>
 
       <Text variant="caption" align="center">By continuing you agree to the community rules. Be normal.</Text>

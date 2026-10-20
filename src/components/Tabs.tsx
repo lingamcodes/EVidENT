@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { borders, colors, radii, sizes, spacing, typography } from '@/theme/tokens';
+import { borders, colors, spacing, typography } from '@/theme/tokens';
+import { CountBadge } from './CountBadge';
 
 type Tab<K extends string> = {
   key: K;
@@ -39,11 +40,7 @@ export function Tabs<K extends string>({ tabs, value, onChange, size = 'md' }: P
               >
                 {tab.label}
               </Text>
-              {count > 0 && (
-                <View style={styles.badge}>
-                  <Text style={[typography.badgeCount, { color: colors.textOnAccent }]}>{count > 99 ? '99+' : count}</Text>
-                </View>
-              )}
+              <CountBadge count={count} />
             </View>
           </Pressable>
         );
@@ -64,13 +61,4 @@ const styles = StyleSheet.create({
   },
   active: { borderBottomColor: colors.text },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 1 },
-  badge: {
-    minWidth: sizes.countBadge,
-    height: sizes.countBadge,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.alertBadge,
-  },
 });

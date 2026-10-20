@@ -17,10 +17,18 @@ type Props = {
   error?: string;
   hint?: string;
   size?: 'md' | 'sm';
-  /** Earliest selectable date (date mode). */
+  /** Earliest selectable day (date mode) or time of day (time mode). */
   minimumDate?: Date;
-  /** Latest selectable date (date mode). */
+  /** Latest selectable day (date mode) or time of day (time mode). */
   maximumDate?: Date;
+};
+
+const minutesOf = (d: Date) => d.getHours() * 60 + d.getMinutes();
+/** `time`'s hours and minutes on `day`'s date. */
+const onDay = (day: Date, time: Date) => {
+  const d = new Date(day);
+  d.setHours(time.getHours(), time.getMinutes(), 0, 0);
+  return d;
 };
 
 /** Input-looking field that opens the phone's native date or time picker. */
@@ -29,17 +37,28 @@ export function DateTimeField({ mode, value, onChange, label, placeholder, error
   const [draft, setDraft] = useState<Date>(value ?? new Date());
   const insets = useSafeAreaInsets();
 
+  // Time mode compares time of day only. iOS's spinner enforces the limits itself
+  // (they're moved onto the picker's day); Android's clock can't, so picks are clamped.
+  const clamp = (d: Date) => {
+    if (mode !== 'time') return d;
+    if (minimumDate && minutesOf(d) < minutesOf(minimumDate)) return onDay(d, minimumDate);
+    if (maximumDate && minutesOf(d) > minutesOf(maximumDate)) return onDay(d, maximumDate);
+    return d;
+  };
+  const limit = (d: Date | undefined) => (d && mode === 'time' ? onDay(draft, d) : d);
+
   const open = () => {
-    const start = value ?? new Date();
+    const start = clamp(value ?? new Date());
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
         value: start,
         mode,
-        minimumDate,
-        maximumDate,
+        // Android's clock has no time limits (clamped below); its calendar does.
+        minimumDate: mode === 'date' ? minimumDate : undefined,
+        maximumDate: mode === 'date' ? maximumDate : undefined,
         is24Hour: false,
         onChange: (event, picked) => {
-          if (event.type === 'set' && picked) onChange(picked);
+          if (event.type === 'set' && picked) onChange(clamp(picked));
         },
       });
     } else {
@@ -72,8 +91,8 @@ export function DateTimeField({ mode, value, onChange, label, placeholder, error
               value={draft}
               mode={mode}
               display="spinner"
-              minimumDate={minimumDate}
-              maximumDate={maximumDate}
+              minimumDate={limit(minimumDate)}
+              maximumDate={limit(maximumDate)}
               onChange={(_e, picked) => picked && setDraft(picked)}
               textColor={colors.text}
               accentColor={colors.accent}
@@ -81,7 +100,7 @@ export function DateTimeField({ mode, value, onChange, label, placeholder, error
             <Button
               label="Done"
               onPress={() => {
-                onChange(draft);
+                onChange(clamp(draft));
                 setIosOpen(false);
               }}
               fullWidth

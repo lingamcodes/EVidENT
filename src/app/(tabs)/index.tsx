@@ -23,7 +23,17 @@ import {
 } from '@/components';
 import { useAuth } from '@/lib/auth';
 import { loadMyEvents, parseInviteCode, type MyEvent } from '@/lib/events';
-import { isUnseen, loadFeed, markSeen, verbText, type FeedItem } from '@/lib/feed';
+import {
+  addSeenKeys,
+  advanceSeen,
+  feedKey,
+  isUnseen,
+  loadFeed,
+  loadSeenKeys,
+  verbText,
+  type FeedItem,
+  type SeenKind,
+} from '@/lib/feed';
 import { formatLongDate, formatWhen, relativeUntil, timeAgo } from '@/lib/format';
 import { loadMyGoing, loadMyInvites, rsvpHref, setRsvp, type FriendGoing, type GoingEvent, type MyInvite, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
@@ -38,12 +48,13 @@ const FEED_LIMIT = 15;
 /**
  * Home (design 6b) as two slides:
  *  1. Your events — greeting, You're going, Your events (cards shrink to fit one
- *     screen), with the Friends | Invites tabs peeking at the bottom.
+ *     screen), with a "See Friends · Invites" strip at the bottom.
  *  2. Friends | Invites — fills the screen. Back to slide 1 via the top strip
  *     or by pulling down at the top of the list.
+ * Red badges count unseen items and go down one by one as each is viewed.
  */
 export default function HomeScreen() {
-  const { session, profile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
+  const { session, profile, refreshProfile, pendingInvite, clearPendingInvite, showNotice } = useAuth();
   const userId = session?.user.id;
   const firstName = profile?.name.split(' ')[0] || 'there';
 
@@ -64,48 +75,88 @@ export default function HomeScreen() {
   const [tabsH, setTabsH] = useState<number>(sizes.tabsRowHeight);
   const [slide1ContentH, setSlide1ContentH] = useState(0);
   const [cardWidth, setCardWidth] = useState<number>(sizes.eventCard.width);
-  const [onSlide2, setOnSlide2] = useState(false);
+  const [onSlide2, setOnSlide2] = useState(false); // past halfway: show the top strip
+  const [atSlide2, setAtSlide2] = useState(false); // settled on slide 2: items count as viewed
 
-  const slide1H = Math.max(0, viewportH - tabsH); // the tabs peek below slide 1
-  const slide2Top = Math.max(0, slide1H - sizes.peekStrip); // leaves room for the strip on slide 2
+  // Slide 1 fills the screen and ends with the "See Friends · Invites" strip; on
+  // slide 2 that spot is covered by the "Your events" strip at the top.
+  const slide1H = viewportH;
+  const slide1BodyH = Math.max(0, viewportH - sizes.peekStrip);
+  const slide2Top = Math.max(0, viewportH - sizes.peekStrip);
   const slide2H = Math.max(0, viewportH - sizes.peekStrip);
   const listH = Math.max(0, slide2H - tabsH);
 
   // Shrink (or grow back) the carousel cards so slide 1 fits one screen. A section's
   // height changes 1:1 with card width (square photo), so one step converges.
   useEffect(() => {
-    if (!slide1H || !slide1ContentH) return;
+    if (!slide1BodyH || !slide1ContentH) return;
     const carousels = (going?.length ? 1 : 0) + (hosting?.length ? 1 : 0);
     if (!carousels) return;
-    const target = cardWidth - (slide1ContentH - slide1H) / carousels;
+    const target = cardWidth - (slide1ContentH - slide1BodyH) / carousels;
     const next = Math.round(Math.min(sizes.eventCard.width, Math.max(sizes.eventCardMinWidth, target)));
     if (Math.abs(next - cardWidth) > 1) setCardWidth(next);
-  }, [slide1ContentH, slide1H, going?.length, hosting?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [slide1ContentH, slide1BodyH, going?.length, hosting?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToEvents = () => pagerRef.current?.scrollTo({ y: 0, animated: true });
+  const goToFeed = () => pagerRef.current?.scrollTo({ y: slide2Top, animated: true });
 
-  // ── Unseen badges (stored on the account) ──────────────────────────────
+  // ── Unseen badges (stored on the account, counted down item by item) ─
   const [seenFriendsAt, setSeenFriendsAt] = useState<string | null | undefined>(undefined);
   const [seenInvitesAt, setSeenInvitesAt] = useState<string | null | undefined>(undefined);
+  const [seenKeys, setSeenKeys] = useState<Record<SeenKind, Set<string>> | null>(null);
   useEffect(() => {
     if (!profile) return;
     setSeenFriendsAt((v) => (v === undefined ? profile.last_seen_friends_at : v));
     setSeenInvitesAt((v) => (v === undefined ? profile.last_seen_invites_at : v));
   }, [profile]);
 
-  const friendsBadge =
-    seenFriendsAt === undefined ? 0 : (feed ?? []).filter((f) => isUnseen(f.at, seenFriendsAt)).length;
-  const invitesBadge =
-    seenInvitesAt === undefined
-      ? 0
-      : (invites ?? []).filter((i) => i.my_status === null && isUnseen(i.invited_at, seenInvitesAt)).length;
+  const ready = !!seenKeys && seenFriendsAt !== undefined && seenInvitesAt !== undefined;
+  const unseenFeed = ready
+    ? (feed ?? []).filter((f) => isUnseen(f.at, seenFriendsAt) && !seenKeys.friends.has(feedKey(f))).map(feedKey)
+    : [];
+  const unseenInvites = ready
+    ? (invites ?? [])
+        .filter((i) => i.my_status === null && isUnseen(i.invited_at, seenInvitesAt) && !seenKeys.invites.has(i.event_id))
+        .map((i) => i.event_id)
+    : [];
+  const friendsBadge = unseenFeed.length;
+  const invitesBadge = unseenInvites.length;
 
-  // Looking at a tab on slide 2 marks it seen.
-  useEffect(() => {
-    if (!onSlide2 || !userId) return;
-    if (tab === 'friends' && friendsBadge) markSeen(userId, 'friends').then(setSeenFriendsAt).catch(() => {});
-    if (tab === 'invites' && invitesBadge) markSeen(userId, 'invites').then(setSeenInvitesAt).catch(() => {});
-  }, [onSlide2, tab, userId, friendsBadge, invitesBadge]);
+  /** Items scrolled into view count as seen; once the last one is seen, the watermark moves up. */
+  const markViewed = (kind: SeenKind, keys: string[]) => {
+    if (!userId || !ready) return;
+    const unseen = kind === 'friends' ? unseenFeed : unseenInvites;
+    const fresh = keys.filter((k) => unseen.includes(k));
+    if (!fresh.length) return;
+    if (fresh.length === unseen.length) {
+      // Watermark = the newest item's own timestamp string (exact, so it compares equal).
+      const times = kind === 'friends' ? (feed ?? []).map((f) => f.at) : (invites ?? []).map((i) => i.invited_at);
+      const upTo = times.reduce((a, b) => (new Date(b).getTime() > new Date(a).getTime() ? b : a));
+      if (kind === 'friends') setSeenFriendsAt(upTo);
+      else setSeenInvitesAt(upTo);
+      setSeenKeys((prev) => prev && { ...prev, [kind]: new Set<string>() });
+      advanceSeen(userId, kind, upTo).then(refreshProfile).catch(() => {});
+    } else {
+      setSeenKeys((prev) => prev && { ...prev, [kind]: new Set([...prev[kind], ...fresh]) });
+      addSeenKeys(kind, fresh).catch(() => {});
+    }
+  };
+
+  // Friends rows: where each sits in the list, to tell which are on screen.
+  const rowLayouts = useRef(new Map<string, { y: number; h: number }>());
+  const friendsScrollY = useRef(0);
+  const viewFriends = () => {
+    if (!atSlide2 || tab !== 'friends' || !listH) return;
+    const top = friendsScrollY.current;
+    const visible: string[] = [];
+    rowLayouts.current.forEach(({ y, h }, key) => {
+      const middle = y + h / 2;
+      if (middle >= top && middle <= top + listH) visible.push(key);
+    });
+    markViewed('friends', visible);
+  };
+  // Invites: the slide on screen.
+  const [inviteIndex, setInviteIndex] = useState(0);
 
   // ── Data ───────────────────────────────────────────────────────────────
   const reload = useCallback(() => {
@@ -114,6 +165,9 @@ export default function HomeScreen() {
     loadMyEvents(userId).then(setHosting).catch(() => setHosting([]));
     loadFeed(FEED_LIMIT).then(setFeed).catch(() => setFeed([]));
     loadMyInvites().then(setInvites).catch(() => setInvites([]));
+    Promise.all([loadSeenKeys('friends'), loadSeenKeys('invites')])
+      .then(([friends, invitesSeen]) => setSeenKeys({ friends, invites: invitesSeen }))
+      .catch(() => setSeenKeys({ friends: new Set(), invites: new Set() }));
     setJustAnswered(new Set());
   }, [userId]);
 
@@ -160,6 +214,14 @@ export default function HomeScreen() {
   // Only invites you haven't replied to (accepted ones live under "You're going").
   const shownInvites = invites?.filter((i) => i.my_status === null || justAnswered.has(i.event_id)) ?? null;
 
+  // Count what's on screen as viewed. Runs after every render; it's a no-op once
+  // nothing new is on screen.
+  const onScreenInvite = atSlide2 && tab === 'invites' ? shownInvites?.[inviteIndex]?.event_id : undefined;
+  useEffect(() => {
+    viewFriends();
+    if (onScreenInvite) markViewed('invites', [onScreenInvite]);
+  });
+
   return (
     <Screen scroll={false}>
       <View style={{ flex: 1 }} onLayout={(e) => setViewportH(Math.round(e.nativeEvent.layout.height))}>
@@ -171,10 +233,15 @@ export default function HomeScreen() {
           decelerationRate="fast"
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
-          onScroll={(e) => setOnSlide2(e.nativeEvent.contentOffset.y > slide2Top / 2)}
+          onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            setOnSlide2(y > slide2Top / 2);
+            setAtSlide2(slide2Top > 0 && y >= slide2Top - 2);
+          }}
         >
           {/* ── Slide 1: Your events ─────────────────────────────────── */}
-          <View style={{ height: slide1H, overflow: 'hidden' }}>
+          <View style={{ height: slide1H }}>
+            <View style={{ height: slide1BodyH, overflow: 'hidden' }}>
             <View style={{ gap: spacing.xl }} onLayout={(e) => setSlide1ContentH(Math.round(e.nativeEvent.layout.height))}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ gap: spacing.xxs }}>
@@ -249,9 +316,11 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
+            </View>
+            <PeekStrip direction="down" label="See Friends · Invites" badge={friendsBadge + invitesBadge} onPress={goToFeed} />
           </View>
 
-          {/* ── Slide 2: Friends | Invites (the tabs peek on slide 1) ─── */}
+          {/* ── Slide 2: Friends | Invites ─────────────────────────────── */}
           <View style={{ height: slide2H }}>
             <View onLayout={(e) => setTabsH(Math.round(e.nativeEvent.layout.height))}>
               <Tabs
@@ -261,54 +330,71 @@ export default function HomeScreen() {
                   { key: 'invites', label: 'Invites', badge: invitesBadge },
                 ]}
                 value={tab}
-                onChange={setTab}
+                onChange={(next) => {
+                  setTab(next);
+                  setInviteIndex(0);
+                }}
               />
             </View>
 
             {tab === 'friends' && (
-              <ScrollPanel height={listH} onPullBack={goToEvents}>
+              <ScrollPanel
+                height={listH}
+                onPullBack={goToEvents}
+                onScrollY={(y) => {
+                  friendsScrollY.current = y;
+                  viewFriends();
+                }}
+              >
                 {feed === null && <Text variant="small" tone="muted">Loading…</Text>}
                 {feed?.length === 0 && (
                   <Text variant="body" tone="muted">When people you follow host or join public events, it shows up here.</Text>
                 )}
-                {feed?.map((item) => (
-                  <ActivityRow
-                    key={`${item.verb}-${item.actor_id}-${item.event_id ?? item.target_user_id}-${item.at}`}
-                    time={timeAgo(item.at)}
-                    thumbUrl={item.thumb}
-                    thumbShape={item.verb === 'followed' ? 'circle' : 'rounded'}
-                    onPress={item.event_id ? () => openEvent(item.event_id!) : undefined}
-                  >
-                    <Bold>{item.actor_name}</Bold> {verbText[item.verb]} <Bold>{item.target}</Bold>
-                  </ActivityRow>
-                ))}
+                {feed?.map((item) => {
+                  const key = feedKey(item);
+                  return (
+                    <View
+                      key={key}
+                      onLayout={(e) => {
+                        const { y, height } = e.nativeEvent.layout;
+                        rowLayouts.current.set(key, { y, h: height });
+                      }}
+                    >
+                      <ActivityRow
+                        time={timeAgo(item.at)}
+                        thumbUrl={item.thumb}
+                        thumbShape={item.verb === 'followed' ? 'circle' : 'rounded'}
+                        onPress={item.event_id ? () => openEvent(item.event_id!) : undefined}
+                      >
+                        <Bold>{item.actor_name}</Bold> {verbText[item.verb]} <Bold>{item.target}</Bold>
+                      </ActivityRow>
+                    </View>
+                  );
+                })}
               </ScrollPanel>
             )}
 
             {tab === 'invites' && (
               <View style={{ height: listH, gap: spacing.sm, paddingTop: spacing.sm }}>
                 {/* Paste an invite link or code */}
-                <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      size="sm"
-                      value={inviteInput}
-                      onChangeText={setInviteInput}
-                      placeholder="Got an invite link? Paste it here"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      error={inviteError}
-                      onSubmitEditing={openInvite}
-                      returnKeyType="go"
-                    />
-                  </View>
-                  <Button label="Open" variant="secondary" size="sm" onPress={openInvite} disabled={!inviteInput.trim()} />
+                <View style={{ gap: spacing.xs }}>
+                  <Input
+                    value={inviteInput}
+                    onChangeText={setInviteInput}
+                    placeholder="Got an invite link? Paste it here"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    error={inviteError}
+                    onSubmitEditing={openInvite}
+                    returnKeyType="go"
+                  />
+                  {!!inviteInput.trim() && <Button label="Open invite" variant="secondary" size="sm" onPress={openInvite} fullWidth />}
                 </View>
 
                 {shownInvites === null && <Text variant="small" tone="muted">Loading…</Text>}
                 {shownInvites?.length === 0 && <Text variant="body" tone="muted">No invites waiting for a reply.</Text>}
                 {!!shownInvites?.length && (
-                  <SlidePager height="content" onPullBack={goToEvents}>
+                  <SlidePager height="content" onPullBack={goToEvents} onIndexChange={setInviteIndex}>
                     {shownInvites.map((i) => (
                       <InviteCard
                         key={i.event_id}

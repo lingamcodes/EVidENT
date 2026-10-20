@@ -30,14 +30,37 @@ export async function loadFeed(limit = 30): Promise<FeedItem[]> {
   return (data as unknown as FeedItem[]) ?? [];
 }
 
-/** Home's Friends / Invites badges: record that the user has now seen that tab (stored on the account). */
-export async function markSeen(userId: string, which: 'friends' | 'invites') {
-  const now = new Date().toISOString();
-  const patch = which === 'friends' ? { last_seen_friends_at: now } : { last_seen_invites_at: now };
-  await supabase.from('users').update(patch).eq('id', userId);
-  return now;
+/* ── Home's red badges ───────────────────────────────────────────────
+ * An item is unseen if it's newer than the tab's watermark (on the account) and
+ * not in seen_items. Looking at an item adds it to seen_items, so the count goes
+ * down one by one; once everything is seen the watermark moves up and the list
+ * is cleared. */
+
+export type SeenKind = 'friends' | 'invites';
+
+/** Stable id for a feed item (it has no row of its own). */
+export const feedKey = (f: FeedItem) => `${f.verb}:${f.actor_id}:${f.event_id ?? f.target_user_id}:${f.at}`;
+
+export async function loadSeenKeys(kind: SeenKind): Promise<Set<string>> {
+  const { data, error } = await supabase.from('seen_items').select('item_key').eq('kind', kind);
+  if (error) throw error;
+  return new Set((data ?? []).map((r) => r.item_key));
 }
 
-/** True if `at` is newer than the last time the tab was seen (never seen = everything is new). */
+export async function addSeenKeys(kind: SeenKind, keys: string[]) {
+  if (!keys.length) return;
+  await supabase
+    .from('seen_items')
+    .upsert(keys.map((item_key) => ({ kind, item_key })), { onConflict: 'user_id,kind,item_key', ignoreDuplicates: true });
+}
+
+/** Everything up to `upTo` has been seen: move the watermark there and clear the list. */
+export async function advanceSeen(userId: string, kind: SeenKind, upTo: string) {
+  const patch = kind === 'friends' ? { last_seen_friends_at: upTo } : { last_seen_invites_at: upTo };
+  await supabase.from('users').update(patch).eq('id', userId);
+  await supabase.from('seen_items').delete().eq('kind', kind);
+}
+
+/** True if `at` is newer than the watermark (never seen = everything is new). */
 export const isUnseen = (at: string, seenAt: string | null | undefined) =>
   !seenAt || new Date(at).getTime() > new Date(seenAt).getTime();

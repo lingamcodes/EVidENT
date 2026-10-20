@@ -40,3 +40,4 @@ export { QuestionnaireSection } from './questionnaire/QuestionnaireSection';
 export * from './questionnaire/types';
 export { ActionTile, InvitedBox, ParticipantGrid } from './ParticipantGrid';
 export { InviteFriendsDialog } from './InviteFriendsDialog';
+export { CountBadge } from './CountBadge';

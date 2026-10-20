@@ -108,6 +108,20 @@ export default function EventScreen() {
     />
   );
 
+  /** Can't make it after all: records "can't go" (the host sees it), frees the spot, and leaves the page. */
+  const leave = async () => {
+    setConfirmLeave(false);
+    setReplying(true);
+    try {
+      await setRsvp(id, 'no');
+      showNotice(`You left ${page?.title ?? 'the event'}.`);
+      back();
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : 'Could not leave the event.');
+      setReplying(false);
+    }
+  };
+
   if (!page) {
     return (
       <Screen>
@@ -340,11 +354,7 @@ export default function EventScreen() {
               label="Leave event"
               variant="danger"
               size="sm"
-              onPress={async () => {
-                setConfirmLeave(false);
-                await respond('no');
-                showNotice(`You left ${page.title}.`);
-              }}
+              onPress={leave}
             />
           </>
         }

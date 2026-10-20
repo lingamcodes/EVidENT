@@ -273,6 +273,26 @@ const JPEG = Buffer.from(
     check("Rachel can't change Dev's seen times", devMe?.last_seen_invites_at === null, JSON.stringify(devMe?.last_seen_invites_at));
     const { error: peek } = await rachel.from('users').select('last_seen_friends_at').eq('id', ID.dev);
     check("Rachel can't read Dev's seen times", !!peek, errMsg(peek));
+    // Per-item "seen" (badges count down one by one)
+    const { error: s1 } = await rachel.from('seen_items').upsert(
+      [{ kind: 'invites', item_key: EV.fiveK }], { onConflict: 'user_id,kind,item_key', ignoreDuplicates: true });
+    const { error: s2 } = await rachel.from('seen_items').upsert(
+      [{ kind: 'invites', item_key: EV.fiveK }], { onConflict: 'user_id,kind,item_key', ignoreDuplicates: true });
+    const { data: mine } = await rachel.from('seen_items').select('item_key').eq('kind', 'invites');
+    check('Viewing an invite saves it as seen (repeat views are fine)', !s1 && !s2 && mine?.length === 1, errMsg(s1 || s2) || JSON.stringify(mine));
+    const { error: forge } = await rachel.from('seen_items').insert({ user_id: ID.dev, kind: 'invites', item_key: 'x' });
+    check("Rachel can't mark things seen for Dev", !!forge, errMsg(forge));
+    await dev.from('seen_items').insert({ kind: 'friends', item_key: 'dev-row' });
+    const { data: spy } = await rachel.from('seen_items').select('item_key').eq('user_id', ID.dev);
+    check("Rachel can't read Dev's seen items", !spy?.length, JSON.stringify(spy));
+    await rachel.from('seen_items').delete().eq('user_id', ID.dev);
+    const { data: devRows } = await dev.from('seen_items').select('item_key');
+    check("Rachel can't clear Dev's seen items", devRows?.length === 1, JSON.stringify(devRows));
+    const { error: bad } = await rachel.from('seen_items').insert({ kind: 'nonsense', item_key: 'x' });
+    check('Only Friends / Invites seen items are accepted', !!bad, errMsg(bad));
+    await rachel.from('seen_items').delete().eq('kind', 'invites');
+    const { data: cleared } = await rachel.from('seen_items').select('item_key');
+    check('Clearing seen items (watermark moved up) works', !cleared?.length, JSON.stringify(cleared));
   }
 
   // ── Guest invites ────────────────────────────────────────────────────
@@ -306,6 +326,10 @@ const JPEG = Buffer.from(
   section = 'Leave & rejoin';
   {
     // Kallang (capacity 2) is full again: Arjun + Mei going, Dev waitlisted, Rachel left.
+    const { data: goingNow } = await rachel.rpc('get_my_going');
+    check('After leaving, Kallang is gone from Rachel\'s "You\'re going"', !goingNow?.some((g) => g.event_id === EV.kallang), JSON.stringify(goingNow?.map((g) => g.title)));
+    const { data: hostRows } = await sundown.from('rsvps').select('status').eq('event_id', EV.kallang).eq('user_id', ID.rachel).single();
+    check("…and the host sees her as can't go", hostRows?.status === 'no', JSON.stringify(hostRows));
     const { data: undo } = await rachel.rpc('set_rsvp', { p_event_id: EV.kallang, p_status: null });
     check('Undo after leaving clears the reply', undo?.status === null, JSON.stringify(undo));
     const { data: back } = await rachel.rpc('set_rsvp', { p_event_id: EV.kallang, p_status: 'yes' });

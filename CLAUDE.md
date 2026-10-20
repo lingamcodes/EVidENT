@@ -65,7 +65,8 @@ copy or onboarding with it.
 ```
 users
   id, email, name, avatar_url, account_type ('individual' | 'org'), created_at,
-  username (unique, lowercase), bio (≤120), city, has_password, onboarded_at
+  username (unique, lowercase), bio (≤120), city, has_password, onboarded_at,
+  last_seen_friends_at, last_seen_invites_at   -- Home badge watermarks (private)
   -- avatars in Storage bucket 'avatars' at <user_id>/avatar.jpg (512px JPEG)
   -- column grants: others can read only id, name, username, avatar_url, bio, city,
   --   account_type, created_at, onboarded_at. Own full row (email, has_password)
@@ -123,6 +124,11 @@ announcements
 
 notifications
   id, user_id (→users), type, related_event_id, read (boolean), created_at
+
+seen_items                 -- Home badges: items viewed since the watermark (own rows only)
+  user_id (→users), kind ('friends' | 'invites'), item_key, seen_at
+  -- unseen = newer than users.last_seen_<kind>_at AND not here; when all are
+  --   seen the app moves the watermark to the newest item and clears the rows
 
 event_questions            -- RSVP questionnaire (host-defined)
   id, event_id (→events), position, text,
