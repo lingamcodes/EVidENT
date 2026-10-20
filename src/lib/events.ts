@@ -157,6 +157,7 @@ function toPayload(form: EventForm, status: 'draft' | 'published') {
     id: q.id,
     text: q.text.trim(),
     type: q.type,
+    important: q.important,
     options: q.type === 'short' ? [] : q.options.filter((o) => o.label.trim()).map((o) => ({ id: o.id, label: o.label.trim() })),
   }));
   return { event, questions };
@@ -169,7 +170,7 @@ export async function loadEventForm(id: string): Promise<EventForm> {
     supabase.from('events').select('*').eq('id', id).single(),
     supabase
       .from('event_questions')
-      .select('id, text, type, image_url, position, event_question_options(id, label, position)')
+      .select('id, text, type, image_url, important, position, event_question_options(id, label, position)')
       .eq('event_id', id)
       .order('position'),
     supabase.from('event_invites').select('users!event_invites_invitee_id_fkey(id, name, username, avatar_url)').eq('event_id', id),
@@ -187,6 +188,7 @@ export async function loadEventForm(id: string): Promise<EventForm> {
     text: q.text,
     type: q.type as QuestionType,
     hasPhoto: !!q.image_url,
+    important: q.important,
     options: [...(q.event_question_options ?? [])]
       .sort((a, b) => a.position - b.position)
       .map((o) => ({ id: o.id, label: o.label })),

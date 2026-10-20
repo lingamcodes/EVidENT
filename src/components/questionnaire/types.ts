@@ -8,6 +8,8 @@ export type Question = {
   type: QuestionType;
   options: QuestionOption[];
   hasPhoto: boolean;
+  /** Host wants guests' answers flagged (allergies, medical…) on the Responses screen. */
+  important: boolean;
 };
 
 export const questionTypes: { key: QuestionType; label: string }[] = [
@@ -26,11 +28,12 @@ export const newQuestion = (
   text = 'New question',
   type: QuestionType = 'mc',
   options: string[] = ['Option 1'],
-): Question => ({ id: localId(), text, type, options: options.map(newOption), hasPhoto: false });
+  important = false,
+): Question => ({ id: localId(), text, type, options: options.map(newOption), hasPhoto: false, important });
 
 /** Starter questions from the design. */
 export const defaultQuestions = (): Question[] => [
-  newQuestion('Dietary restrictions', 'mc', ['Vegetarian', 'Halal', 'Allergies', 'Nil']),
+  newQuestion('Dietary restrictions', 'mc', ['Vegetarian', 'Halal', 'Allergies', 'Nil'], true),
   newQuestion('Shirt size', 'mc', ['S', 'M', 'L', 'XL']),
 ];
 

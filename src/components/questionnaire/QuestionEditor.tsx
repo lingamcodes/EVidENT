@@ -10,6 +10,7 @@ import { ChoiceMarker } from '../ChoiceMarker';
 import { IconButton } from '../IconButton';
 import { Input } from '../Input';
 import { Text } from '../Text';
+import { Toggle } from '../Toggle';
 import { isAllergyOption, newOption, questionTypes, type Question } from './types';
 
 type Props = {
@@ -107,6 +108,14 @@ export function QuestionEditor({ question, onChange, onDelete }: Props) {
           </View>
         )}
 
+        <View style={styles.spread}>
+          <View style={styles.flex}>
+            <Text variant="label">Important</Text>
+            <Text variant="small" tone="subtle">Flag guests whose answer needs attention (e.g. allergies)</Text>
+          </View>
+          <Toggle value={question.important} onChange={(important) => update({ important })} accessibilityLabel="Important question" />
+        </View>
+
         <Button label="Delete question" variant="dangerSoft" size="sm" fullWidth onPress={onDelete} />
       </View>
     </Card>
@@ -122,4 +131,5 @@ const styles = StyleSheet.create({
   optionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   followUp: { marginLeft: sizes.choiceMarker + spacing.sm },
   start: { alignItems: 'flex-start' },
+  spread: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

@@ -134,6 +134,7 @@ export type Database = {
           event_id: string
           id: string
           image_url: string | null
+          important: boolean
           position: number
           text: string
           type: Database["public"]["Enums"]["question_type"]
@@ -143,6 +144,7 @@ export type Database = {
           event_id: string
           id?: string
           image_url?: string | null
+          important?: boolean
           position?: number
           text: string
           type?: Database["public"]["Enums"]["question_type"]
@@ -152,6 +154,7 @@ export type Database = {
           event_id?: string
           id?: string
           image_url?: string | null
+          important?: boolean
           position?: number
           text?: string
           type?: Database["public"]["Enums"]["question_type"]

@@ -63,6 +63,7 @@ function RootNavigator() {
           <Stack.Screen name="events/[id]" />
           <Stack.Screen name="events/[id]/edit" options={{ presentation: 'modal' }} />
           <Stack.Screen name="events/[id]/rsvp" />
+          <Stack.Screen name="events/[id]/responses" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="invite/[code]" />
           <Stack.Screen name="dev-components" />

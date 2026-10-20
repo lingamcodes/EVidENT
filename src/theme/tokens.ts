@@ -169,6 +169,8 @@ export const sizes = {
   tabsRowHeight: 40,
   /** Home: thin "back to Your events" strip shown at the top of slide 2. */
   peekStrip: 36,
+  /** Responses summary: height of an option's count bar. */
+  tallyBar: 6,
   /** Event page: one face + first name in the participants grid. */
   participantTile: 64,
   /** Red unseen-count bubble on tabs. */

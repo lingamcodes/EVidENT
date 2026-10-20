@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { borders, colors, radii, spacing, typography } from '@/theme/tokens';
 
-type Variant = 'accent' | 'secondary' | 'neutral' | 'outline' | 'overlay';
+type Variant = 'accent' | 'secondary' | 'neutral' | 'outline' | 'overlay' | 'danger';
 
 type Props = {
   label: string;
@@ -15,6 +15,7 @@ const labelColors: Record<Variant, string> = {
   neutral: colors.textStrong,
   outline: colors.accent,
   overlay: colors.textOnOverlay,
+  danger: colors.danger,
 };
 
 export function Tag({ label, variant = 'neutral' }: Props) {
@@ -37,4 +38,5 @@ const styles = StyleSheet.create({
   neutral: { backgroundColor: colors.neutralSoft },
   outline: { borderWidth: borders.hairline, borderColor: colors.accent },
   overlay: { backgroundColor: colors.overlay },
+  danger: { backgroundColor: colors.dangerSoft },
 });

@@ -19,6 +19,7 @@ import {
   ParticipantGrid,
   PersonRow,
   Screen,
+  Tag,
   Text,
   type MenuAnchor,
 } from '@/components';
@@ -34,6 +35,7 @@ import {
   type Person,
 } from '@/lib/events';
 import { formatEventWhen } from '@/lib/format';
+import { loadResponses, responsesHref, type EventResponses } from '@/lib/responses';
 import { loadEventSocial, loadParticipants, rsvpHref, setRsvp, socialLine, type EventSocial, type FriendGoing, type RsvpStatus } from '@/lib/rsvp';
 import { sizes, spacing } from '@/theme/tokens';
 
@@ -53,6 +55,8 @@ export default function EventScreen() {
   const [participants, setParticipants] = useState<FriendGoing[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [sentInvites, setSentInvites] = useState<Person[]>([]);
+  // Host: questionnaire responses summary (only for events with questions).
+  const [responses, setResponses] = useState<EventResponses | null>(null);
   // Who you follow (individuals) — they come right after you in the participants row.
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
 
@@ -61,7 +65,10 @@ export default function EventScreen() {
     useCallback(() => {
       if (!userId) return;
       loadEventPage(id, userId)
-        .then(setPage)
+        .then((p) => {
+          setPage(p);
+          if (p.isHost) loadResponses(id).then(setResponses).catch(() => setResponses(null));
+        })
         .catch((e) => setError(e instanceof Error ? e.message : 'Could not load this event.'));
       loadEventSocial(id).then(setSocial).catch(() => setSocial(null));
       loadParticipants(id).then(setParticipants).catch(() => setParticipants([]));
@@ -254,6 +261,21 @@ export default function EventScreen() {
               <Text variant="label">{guestSummary}</Text>
               <Text variant="small" tone="subtle">{guestDetail}</Text>
             </View>
+            <Text variant="heading" tone="subtle">›</Text>
+          </View>
+        </Card>
+      )}
+
+      {page.isHost && !!responses?.questions.length && (
+        <Card onPress={() => router.push(responsesHref(id))} accessibilityLabel="Questionnaire responses">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ flex: 1, gap: spacing.xxs }}>
+              <Text variant="label">{`Responses · ${responses.guests.length}`}</Text>
+              <Text variant="small" tone="subtle">Summary, each guest's answers, export</Text>
+            </View>
+            {responses.guests.some((g) => g.flags.length) && (
+              <Tag label={`${responses.guests.filter((g) => g.flags.length).length} need attention`} variant="danger" />
+            )}
             <Text variant="heading" tone="subtle">›</Text>
           </View>
         </Card>
