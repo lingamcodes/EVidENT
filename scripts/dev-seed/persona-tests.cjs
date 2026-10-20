@@ -253,6 +253,69 @@ const JPEG = Buffer.from(
     check('Invite friend list: Rachel sees Dev but not Sundown (an org)', friendIds.includes(ID.dev) && !friendIds.includes(ID.sundown), JSON.stringify(friendIds));
   }
 
+  // ── Home cards & badges ──────────────────────────────────────────────
+  section = 'Home cards & badges';
+  {
+    const { data: going } = await rachel.rpc('get_my_going');
+    const fiveK = going?.find((g) => g.event_id === EV.fiveK);
+    check('Going card names the host (Sundown)', fiveK?.host_username === 'sundownrunners', JSON.stringify(fiveK));
+    const faces = (fiveK?.friends_going_people ?? []).map((p) => p.id);
+    check("Friends' faces = only people Rachel follows (Dev), not Arjun", faces.includes(ID.dev) && !faces.includes(ID.arjun) && fiveK?.friends_going === 1, JSON.stringify(fiveK?.friends_going_people));
+    const { data: inv } = await dev.rpc('get_my_invites');
+    const supper = inv?.find((i) => i.event_id === EV.supper);
+    check('Invite has invited_at (for the unseen badge) and host', !!supper?.invited_at && supper?.host_username === 'racheltan', JSON.stringify(supper));
+    const now = new Date().toISOString();
+    const { error: seenErr } = await rachel.from('users').update({ last_seen_friends_at: now }).eq('id', ID.rachel);
+    const { data: me } = await rachel.rpc('get_my_profile').maybeSingle();
+    check('Opening Friends saves "seen" on the account', !seenErr && me?.last_seen_friends_at && new Date(me.last_seen_friends_at).getTime() === new Date(now).getTime(), errMsg(seenErr) || JSON.stringify(me?.last_seen_friends_at));
+    await rachel.from('users').update({ last_seen_invites_at: now }).eq('id', ID.dev);
+    const { data: devMe } = await dev.rpc('get_my_profile').maybeSingle();
+    check("Rachel can't change Dev's seen times", devMe?.last_seen_invites_at === null, JSON.stringify(devMe?.last_seen_invites_at));
+    const { error: peek } = await rachel.from('users').select('last_seen_friends_at').eq('id', ID.dev);
+    check("Rachel can't read Dev's seen times", !!peek, errMsg(peek));
+  }
+
+  // ── Guest invites ────────────────────────────────────────────────────
+  section = 'Guest invites';
+  {
+    // Supper is private, hosted by Rachel, guest invites OFF; Dev is going.
+    const { error: off } = await dev.from('event_invites').insert({ event_id: EV.supper, invitee_id: ID.kopi, invited_by: ID.dev });
+    check("Guest can't invite to a private event when the host hasn't allowed it", !!off, errMsg(off));
+    const { error: allow } = await rachel.from('events').update({ allow_guest_invites: true }).eq('id', EV.supper);
+    check('Host turns on "Allow others to invite"', !allow, errMsg(allow));
+    const { data: before } = await kopi.from('events').select('id').eq('id', EV.supper);
+    check("Kopi Club can't see Rachel's private supper yet", !before?.length);
+    const { error: on } = await dev.from('event_invites').insert({ event_id: EV.supper, invitee_id: ID.kopi, invited_by: ID.dev });
+    check('…then Dev (a guest) can invite Kopi Club', !on, errMsg(on));
+    const { data: seen } = await kopi.from('events').select('id').eq('id', EV.supper);
+    check('…and Kopi Club can now see the private event', seen?.length === 1);
+    const { data: kopiInv } = await kopi.rpc('get_my_invites');
+    const sup = kopiInv?.find((i) => i.event_id === EV.supper);
+    check("…it's on their Home: invited by Dev, hosted by Rachel", /dev/i.test(sup?.inviter_name ?? '') && sup?.host_username === 'racheltan', JSON.stringify(sup));
+    const { error: imp } = await dev.from('event_invites').insert({ event_id: EV.supper, invitee_id: ID.hall, invited_by: ID.rachel });
+    check("Can't send an invite in someone else's name", !!imp, errMsg(imp));
+    const { data: others } = await arjun.from('event_invites').select('invitee_id, invited_by').eq('event_id', EV.kallang);
+    check("Guests only see their own sent/received invites (Arjun can't see Mei's)", !others?.some((r) => r.invited_by === ID.mei), JSON.stringify(others));
+    const { data: hostSees } = await sundown.from('event_invites').select('invitee_id').eq('event_id', EV.kallang);
+    check('Host sees invites sent by guests', hostSees?.some((r) => r.invitee_id === ID.kopi), JSON.stringify(hostSees));
+    const { error: hostPub } = await sundown.from('event_invites').insert({ event_id: EV.fiveK, invitee_id: ID.mei, invited_by: ID.sundown });
+    check('Host can invite to a public event (event form, any visibility)', !hostPub, errMsg(hostPub));
+  }
+
+  // ── Leave, undo, rejoin ──────────────────────────────────────────────
+  section = 'Leave & rejoin';
+  {
+    // Kallang (capacity 2) is full again: Arjun + Mei going, Dev waitlisted, Rachel left.
+    const { data: undo } = await rachel.rpc('set_rsvp', { p_event_id: EV.kallang, p_status: null });
+    check('Undo after leaving clears the reply', undo?.status === null, JSON.stringify(undo));
+    const { data: back } = await rachel.rpc('set_rsvp', { p_event_id: EV.kallang, p_status: 'yes' });
+    check('Rejoining a full event puts you behind the waitlist (#2)', back?.waitlisted === true && back?.waitlist_rank === 2, JSON.stringify(back));
+    const { data: list } = await rachel.rpc('get_event_participants', { p_event_id: EV.kallang });
+    check('…and a waitlisted guest still gets no participant list', Array.isArray(list) && list.length === 0, JSON.stringify(list));
+    const { data: plist } = await arjun.rpc('get_event_participants', { p_event_id: EV.fiveK });
+    check("Participant list never includes 'maybe' replies (Mei on the 5k)", !plist?.some((p) => p.id === ID.mei), JSON.stringify(plist));
+  }
+
   // ── Storage ──────────────────────────────────────────────────────────
   section = 'Storage';
   {
