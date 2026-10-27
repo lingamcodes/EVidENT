@@ -27,6 +27,11 @@ declare
   e_hike    uuid := 'fe000000-0000-4000-8000-000000000006';
   e_draft   uuid := 'fe000000-0000-4000-8000-000000000007';
   e_past    uuid := 'fe000000-0000-4000-8000-000000000008';
+  -- Extra events that only exist to invite the real account
+  e_pottery uuid := 'fe000000-0000-4000-8000-000000000009';
+  e_hawker  uuid := 'fe000000-0000-4000-8000-00000000000a';
+  e_cleanup uuid := 'fe000000-0000-4000-8000-00000000000b';
+  e_quiz    uuid := 'fe000000-0000-4000-8000-00000000000c';
 
   q uuid;
   my_event uuid;
@@ -173,7 +178,52 @@ begin
       (e_supper, me, rachel),
       (e_concert, me, hall),
       -- Invited by a guest, not the host: Rachel is going to Sundown's 5k
-      (e_5k, me, rachel)
+      (e_5k, me, rachel),
+      -- Dev's hike, passed on by Rachel (a guest who's going)
+      (e_hike, me, rachel),
+      -- Kallang is full: accepting puts you on the waitlist
+      (e_kallang, me, arjun)
+    on conflict do nothing;
+
+    -- More invites, each showing something different on the invite card
+    insert into public.events (id, host_id, title, description, date_time, ends_at, rsvp_by, location,
+                               cover_image, capacity, visibility, status, created_at) values
+      -- private, RSVP closes in 3 days, no friends going
+      (e_pottery, mei, 'Pottery taster', 'Two hours on the wheel. Clay and aprons provided; you keep one piece.',
+       date_trunc('day', now()) + interval '7 days 14 hours', date_trunc('day', now()) + interval '7 days 16 hours',
+       now() + interval '3 days', 'Tiong Bahru Clay Studio',
+       'https://picsum.photos/seed/evident-pottery/1000/1000', 8, 'private', 'published', now() - interval '30 minutes'),
+      -- public, several friends going, invited by a guest
+      (e_hawker, rachel, 'Hawker crawl: Old Airport Road', 'Six stalls, one stomach. Bring cash and an appetite.',
+       date_trunc('day', now()) + interval '4 days 18 hours', null, null, 'Old Airport Road Food Centre',
+       'https://picsum.photos/seed/evident-hawker/1000/1000', null, 'public', 'published', now() - interval '2 hours'),
+      -- org event with a questionnaire, RSVP closes in ~10 hours (red banner)
+      (e_cleanup, sundown, 'Beach cleanup + breakfast', 'We bring bags and grabbers. Breakfast on us after.',
+       date_trunc('day', now()) + interval '3 days 7 hours', date_trunc('day', now()) + interval '3 days 10 hours',
+       now() + interval '10 hours', 'East Coast Park Area D',
+       'https://picsum.photos/seed/evident-cleanup/1000/1000', 30, 'public', 'published', now() - interval '45 minutes'),
+      -- RSVP-by already passed (card shows "RSVPs have closed")
+      (e_quiz, hall, 'Hall quiz night', 'Teams of four. Prizes for first place and best team name.',
+       date_trunc('day', now()) + interval '2 days 20 hours', null,
+       now() - interval '2 hours', 'Hall common lounge',
+       'https://picsum.photos/seed/evident-quiz/1000/1000', null, 'public', 'published', now() - interval '3 days');
+
+    insert into public.event_questions (event_id, position, text, type, important)
+      values (e_cleanup, 0, 'Any allergies or medical conditions we should know about?', 'short', true);
+    insert into public.event_questions (event_id, position, text, type) values (e_cleanup, 1, 'Staying for breakfast?', 'mc') returning id into q;
+    insert into public.event_question_options (question_id, position, label) values (q, 0, 'Yes'), (q, 1, 'No');
+
+    insert into public.rsvps (event_id, user_id, status, created_at, updated_at) values
+      (e_hawker, dev, 'yes', now() - interval '90 minutes', now() - interval '90 minutes'),
+      (e_hawker, mei, 'yes', now() - interval '80 minutes', now() - interval '80 minutes'),
+      (e_hawker, arjun, 'yes', now() - interval '70 minutes', now() - interval '70 minutes'),
+      (e_quiz, mei, 'yes', now() - interval '2 days', now() - interval '2 days');
+
+    insert into public.event_invites (event_id, invitee_id, invited_by, created_at) values
+      (e_pottery, me, mei, now() - interval '25 minutes'),
+      (e_hawker, me, dev, now() - interval '60 minutes'),
+      (e_cleanup, me, sundown, now() - interval '40 minutes'),
+      (e_quiz, me, hall, now() - interval '3 days')
     on conflict do nothing;
 
     -- Fake guests on the real account's newest published event
