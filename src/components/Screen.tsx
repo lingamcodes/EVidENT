@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { Animated, Dimensions, Keyboard, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,7 +18,7 @@ type Props = {
 };
 
 /** Lets inputs ask the screen to scroll them above the keyboard. */
-const KeyboardRevealContext = createContext<((field: View) => void) | null>(null);
+const KeyboardRevealContext = createContext<((field: ComponentRef<typeof View>) => void) | null>(null);
 export const useRevealAboveKeyboard = () => useContext(KeyboardRevealContext);
 
 /** Gap kept between a focused field and the top of the keyboard. */
@@ -26,7 +26,7 @@ const KEYBOARD_GAP = spacing.xl;
 
 /** Page wrapper: background, safe area, side gutters, and keeps focused fields above the keyboard. */
 export function Screen({ children, scroll = true, footer, collapsingHeader }: Props) {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   // Collapsing header: hide distance follows scroll, clamped to the header's height,
   // so any upward scroll starts bringing it back.
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -38,9 +38,9 @@ export function Screen({ children, scroll = true, footer, collapsingHeader }: Pr
   ).interpolate({ inputRange: [0, Math.max(headerHeight, 1)], outputRange: [0, -Math.max(headerHeight, 1)] });
   const offsetY = useRef(0);
   const keyboardHeight = useRef(0);
-  const pendingField = useRef<View | null>(null);
+  const pendingField = useRef<ComponentRef<typeof View> | null>(null);
 
-  const reveal = useCallback((field: View) => {
+  const reveal = useCallback((field: ComponentRef<typeof View>) => {
     field.measureInWindow((_x, y, _w, height) => {
       const visibleBottom = Dimensions.get('window').height - keyboardHeight.current - KEYBOARD_GAP;
       const overlap = y + height - visibleBottom;
@@ -50,7 +50,7 @@ export function Screen({ children, scroll = true, footer, collapsingHeader }: Pr
 
   // iOS only: Android resizes the window for the keyboard and scrolls natively.
   const requestReveal = useCallback(
-    (field: View) => {
+    (field: ComponentRef<typeof View>) => {
       if (Platform.OS !== 'ios') return;
       if (keyboardHeight.current > 0) reveal(field);
       else pendingField.current = field; // keyboard not up yet; reveal once it is

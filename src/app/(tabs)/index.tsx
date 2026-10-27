@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import {
@@ -70,7 +70,7 @@ export default function HomeScreen() {
   const [inviteError, setInviteError] = useState<string>();
 
   // ── Slide layout (measured, so it fits any phone) ──────────────────────
-  const pagerRef = useRef<ScrollView>(null);
+  const pagerRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [viewportH, setViewportH] = useState(0);
   const [tabsH, setTabsH] = useState<number>(sizes.tabsRowHeight);
   const [slide1ContentH, setSlide1ContentH] = useState(0);

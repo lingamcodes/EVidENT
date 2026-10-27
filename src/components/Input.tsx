@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { borders, colors, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -33,7 +33,7 @@ export function Input({
   ...rest
 }: Props) {
   const [focused, setFocused] = useState(false);
-  const fieldRef = useRef<View>(null);
+  const fieldRef = useRef<ComponentRef<typeof View>>(null);
   const revealAboveKeyboard = useRevealAboveKeyboard();
   const readOnly = rest.editable === false && !picker;
   const message = error ?? success ?? hint;

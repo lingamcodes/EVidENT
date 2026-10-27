@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ComponentRef } from 'react';
 import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
 
 import {
@@ -475,7 +475,7 @@ function GoingButton({
   onOpenAnswers: () => void;
   onLeave: () => void;
 }) {
-  const anchorRef = useRef<View>(null);
+  const anchorRef = useRef<ComponentRef<typeof View>>(null);
   const [anchor, setAnchor] = useState<MenuAnchor | null>(null);
   const [open, setOpen] = useState(false);
 

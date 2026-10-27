@@ -1,12 +1,12 @@
 import type { Session } from '@supabase/supabase-js';
 import { makeRedirectUri } from 'expo-auth-session';
-import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { Database } from './database.types';
 import { supabase } from './supabase';
+import { getQueryParams } from './urlParams';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,7 +37,7 @@ const redirectTo = () => makeRedirectUri();
 
 /** Turns the tokens in a Supabase redirect URL into a signed-in session. */
 async function createSessionFromUrl(url: string) {
-  const { params, errorCode } = QueryParams.getQueryParams(url);
+  const { params, errorCode } = getQueryParams(url);
   if (errorCode) throw new Error(params.error_description ?? errorCode);
 
   const { access_token, refresh_token } = params;
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (invite && !sessionRef.current) setPendingInvite(invite[1].toUpperCase());
 
     // Mark recovery before signing in, so the app never flashes Home/onboarding first.
-    const isRecovery = QueryParams.getQueryParams(url).params.type === 'recovery';
+    const isRecovery = getQueryParams(url).params.type === 'recovery';
     if (isRecovery) setPasswordRecovery(true);
     createSessionFromUrl(url).catch((e) => {
       if (isRecovery) setPasswordRecovery(false);

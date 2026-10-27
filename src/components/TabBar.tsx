@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { TabTriggerSlotProps } from 'expo-router/ui';
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, type ComponentRef, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,7 +19,7 @@ type ItemProps = TabTriggerSlotProps & {
 };
 
 /** One tab: icon over a small bold label; accent when active. Used as a TabTrigger child. */
-export const TabBarItem = forwardRef<View, ItemProps>(function TabBarItem(
+export const TabBarItem = forwardRef<ComponentRef<typeof View>, ItemProps>(function TabBarItem(
   { label, icon, isFocused, ...pressable },
   ref,
 ) {
